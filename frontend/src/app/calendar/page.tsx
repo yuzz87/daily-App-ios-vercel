@@ -435,93 +435,90 @@ export default function CalendarPage() {
 
   return (
     <>
-    <header>
-      <CalendarHeader
-        currentYear={currentYear}
-        currentMonth={currentMonth}
-        loading={loadingHolidays || loadingEvents}
-        searchKeyword={searchKeyword}
-        onChangeKeyword={setSearchKeyword}
-        onClearKeyword={() => setSearchKeyword("")}
-        onPrevMonth={goToPrevMonth}
-        onNextMonth={goToNextMonth}
-        onToday={goToToday}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-      />
+    <div className="">
+      <header>
+        <CalendarHeader
+          currentYear={currentYear}
+          currentMonth={currentMonth}
+          //loading={loadingHolidays || loadingEvents}
+          searchKeyword={searchKeyword}
+          onChangeKeyword={setSearchKeyword}
+          onClearKeyword={() => setSearchKeyword("")}
+          onPrevMonth={goToPrevMonth}
+          onNextMonth={goToNextMonth}
+          onToday={goToToday}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={toggleSidebar}
+        />
 
 
-    </header>
-    <nav>
+      </header>
+      <nav>
 
-    </nav>
-    <main className="min-h-screen bg-slate-100 px-2 py-3 sm:p-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row">
-      {isSidebarOpen && (
-        <aside className="lg:w-64 lg:shrink-0">
-          <EventSearch
-            searchKeyword={searchKeyword}
-            totalCount={events.length}
-            filteredCount={filteredEvents.length}
-            onChangeKeyword={setSearchKeyword}
-            onClear={() => setSearchKeyword("")}
-          />
-        </aside>
-      )}
+      </nav>
+      <main className="relative bg-teal-100/80 min-h-screen px-2 py-3 sm:p-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 lg:flex-row lg:justify-center">
+          {isSidebarOpen && (
+            <aside className="lg:w-64 lg:shrink-0">
+              <EventSearch
+                searchKeyword={searchKeyword}
+                totalCount={events.length}
+                filteredCount={filteredEvents.length}
+                onChangeKeyword={setSearchKeyword}
+                onClear={() => setSearchKeyword("")}
+              />
+            </aside>
+          )}
 
-        <section className="rounded-2xl bg-white p-3 shadow-sm sm:p-5">
-          <div className="mb-4">
+            <section className="w-full border bg-white p-3 shadow-sm sm:p-5 lg:w-225 lg:max-w-225 lg:shrink-0">
+              <CalendarGrid
+                calendarDays={calendarDays}
+                holidayMap={holidayMap}
+                eventMap={eventMap}
+                todayString={todayString}
+                editingEventId={editingEventId}
+                onDateClick={openCreateModal}
+                onEventClick={startEditEvent}
+                onMoreEventsClick={openDayEventsModal}
+              />
+            </section>
           </div>
 
-
-
-          <CalendarGrid
-            calendarDays={calendarDays}
-            holidayMap={holidayMap}
-            eventMap={eventMap}
-            todayString={todayString}
-            editingEventId={editingEventId}
-            onDateClick={openCreateModal}
-            onEventClick={startEditEvent}
-            onMoreEventsClick={openDayEventsModal}
+          <DayEventsModal
+            isOpen={isDayEventsModalOpen}
+            dateString={selectedDayEventsDate}
+            events={selectedDayEvents}
+            onClose={closeDayEventsModal}
+            onEventClick={openEventFromDayEventsModal}
           />
-        </section>
 
-        <DayEventsModal
-          isOpen={isDayEventsModalOpen}
-          dateString={selectedDayEventsDate}
-          events={selectedDayEvents}
-          onClose={closeDayEventsModal}
-          onEventClick={openEventFromDayEventsModal}
-        />
-
-        <EventModal
-          isOpen={isModalOpen}
-          editingEventId={editingEventId}
-          selectedDate={selectedDate}
-          eventTitle={eventTitle}
-          eventDescription={eventDescription}
-          eventStartTime={eventStartTime}
-          eventEndTime={eventEndTime}
-          eventAllDay={eventAllDay}
-          eventColor={eventColor}
-          errorMessage={errorMessage}
-          submitting={submitting}
-          deleting={deleting}
-          onClose={closeModal}
-          onCreate={createEvent}
-          onUpdate={updateEvent}
-          onDelete={deleteEvent}
-          setSelectedDate={setSelectedDate}
-          setEventTitle={setEventTitle}
-          setEventDescription={setEventDescription}
-          setEventStartTime={setEventStartTime}
-          setEventEndTime={setEventEndTime}
-          setEventAllDay={setEventAllDay}
-          setEventColor={setEventColor}
-        />
-      </div>
-    </main>
+          <EventModal
+            isOpen={isModalOpen}
+            editingEventId={editingEventId}
+            selectedDate={selectedDate}
+            eventTitle={eventTitle}
+            eventDescription={eventDescription}
+            eventStartTime={eventStartTime}
+            eventEndTime={eventEndTime}
+            eventAllDay={eventAllDay}
+            eventColor={eventColor}
+            errorMessage={errorMessage}
+            submitting={submitting}
+            deleting={deleting}
+            onClose={closeModal}
+            onCreate={createEvent}
+            onUpdate={updateEvent}
+            onDelete={deleteEvent}
+            setSelectedDate={setSelectedDate}
+            setEventTitle={setEventTitle}
+            setEventDescription={setEventDescription}
+            setEventStartTime={setEventStartTime}
+            setEventEndTime={setEventEndTime}
+            setEventAllDay={setEventAllDay}
+            setEventColor={setEventColor}
+          />
+      </main>
+    </div>
     </>
   );
 }

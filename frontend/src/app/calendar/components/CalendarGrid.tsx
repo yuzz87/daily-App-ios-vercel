@@ -34,24 +34,24 @@ export default function CalendarGrid({
 }: CalendarGridProps) {
   return (
     <>
-      <div className="grid grid-cols-7 rounded-t-lg bg-gray-800 text-white">
+      <div className="grid grid-cols-7">
         {["日", "月", "火", "水", "木", "金", "土"].map((week) => (
           <div
             key={week}
-            className="p-1.5 text-center text-xs font-bold sm:p-3 sm:text-base"
+            className="text-center text-xs font-bold "
           >
             {week}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 rounded-b-lg border-l border-t bg-white">
+      <div className="grid grid-cols-7 border-l border-t">
         {calendarDays.map((calendarDay, index) => {
           if (!calendarDay.dateString) {
             return (
               <div
                 key={`empty-${index}`}
-                className="min-h-20 border-b border-r bg-gray-100 p-1 sm:min-h-28 sm:p-2"
+                className="min-h-20 border-b border-r bg-gray-100"
               />
             );
           }
