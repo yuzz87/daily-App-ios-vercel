@@ -21,7 +21,6 @@ export default function CalendarHeader({
   currentMonth,
   searchKeyword,
   onChangeKeyword,
-  onClearKeyword,
   onPrevMonth,
   onNextMonth,
   onToday,
@@ -30,7 +29,6 @@ export default function CalendarHeader({
 }: CalendarHeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const isSearching = searchKeyword.trim().length > 0;
 
   return (
     <div className="bg-teal-100/20" >

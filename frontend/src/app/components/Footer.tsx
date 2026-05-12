@@ -1,0 +1,73 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const footerLinks = [
+  {
+    href: "/calendar",
+    label: "カレンダー",
+    icon: "/birdhouse.svg",
+  },
+  {
+    href: "/search",
+    label: "検索",
+    icon: "/search.svg",
+  },
+  {
+    href: "/create",
+    label: "作成",
+    icon: "/square-plus.svg",
+  },
+  {
+    href: "/settings",
+    label: "設定",
+    icon: "/settings.svg",
+  },
+  {
+    href: "/profile",
+    label: "プロフィール",
+    icon: "/user-round.svg",
+  },
+];
+
+export default function Footer() {
+  const pathname = usePathname();
+
+  return (
+    <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <nav
+        aria-label="フッターナビゲーション"
+        className="mx-auto grid max-w-3xl grid-cols-5 px-2 py-2"
+      >
+        {footerLinks.map((link) => {
+          const isActive =
+            pathname === link.href || pathname.startsWith(`${link.href}/`);
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-xs transition ${
+                isActive
+                  ? "bg-teal-50 text-teal-700"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <Image
+                src={link.icon}
+                alt=""
+                width={24}
+                height={24}
+                className={isActive ? "opacity-100" : "opacity-70"}
+              />
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </footer>
+  );
+}

@@ -11,10 +11,23 @@ import {
 } from "./api";
 import CalendarGrid from "./components/CalendarGrid";
 import CalendarHeader from "./components/CalendarHeader";
-import DayEventsModal from "./components/DayEventsModal";
+// import DayEventsModal from "./components/DayEventsModal";
 import EventModal from "./components/EventModal";
 import EventSearch from "./components/EventSearch";
+import SidebarCalendar from "./components/SidebarCalendar";
+import WeekCalendarView from "./components/WeekCalendarView";
 import type { CalendarDay, CalendarEvent, Holiday } from "./types";
+
+type CalendarViewMode = "day" | "week" | "month" | "year" | "schedule" | "fourDays";
+
+const VIEW_MODE_OPTIONS: { label: string; value: CalendarViewMode }[] = [
+  { label: "日", value: "day" },
+  { label: "週", value: "week" },
+  { label: "月", value: "month" },
+  { label: "年", value: "year" },
+  { label: "スケジュール", value: "schedule" },
+  { label: "4日", value: "fourDays" },
+];
 
 function formatDate(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(
@@ -86,7 +99,9 @@ export default function CalendarPage() {
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() =>
+    formatDate(today.getFullYear(), today.getMonth(), today.getDate())
+  );
   const [eventTitle, setEventTitle] = useState("");
   const [eventDescription, setEventDescription] = useState("");
   const [eventStartTime, setEventStartTime] = useState("09:00");
@@ -97,7 +112,7 @@ export default function CalendarPage() {
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
 
   const [isDayEventsModalOpen, setIsDayEventsModalOpen] = useState(false);
   const [selectedDayEventsDate, setSelectedDayEventsDate] = useState("");
@@ -148,16 +163,22 @@ export default function CalendarPage() {
     const map = new Map<string, CalendarEvent[]>();
 
     filteredEvents.forEach((event) => {
-      const date = event.start_at.slice(0, 10);
+      const dateString = event.start_at.slice(0, 10);
 
-      if (!map.has(date)) {
-        map.set(date, []);
+      if (!map.has(dateString)) {
+        map.set(dateString, []);
       }
 
-      map.get(date)?.push(event);
+      map.get(dateString)?.push(event);
     });
 
     return map;
+  }, [filteredEvents]);
+
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) =>
+      a.start_at.localeCompare(b.start_at)
+    );
   }, [filteredEvents]);
 
   useEffect(() => {
@@ -223,16 +244,16 @@ export default function CalendarPage() {
     setIsModalOpen(true);
   }
 
-  function openDayEventsModal(dateString: string, dayEvents: CalendarEvent[]) {
-    setSelectedDayEventsDate(dateString);
-    setSelectedDayEvents(dayEvents);
-    setIsDayEventsModalOpen(true);
-  }
-
   function closeDayEventsModal() {
     setIsDayEventsModalOpen(false);
     setSelectedDayEventsDate("");
     setSelectedDayEvents([]);
+  }
+
+  function openDayEventsModal(dateString: string, dayEvents: CalendarEvent[]) {
+    setSelectedDayEventsDate(dateString);
+    setSelectedDayEvents(dayEvents);
+    setIsDayEventsModalOpen(true);
   }
 
   function openEventFromDayEventsModal(event: CalendarEvent) {
@@ -245,6 +266,7 @@ export default function CalendarPage() {
 
     setCurrentYear(newDate.getFullYear());
     setCurrentMonth(newDate.getMonth());
+    setSelectedDate(formatDate(newDate.getFullYear(), newDate.getMonth(), 1));
     setIsModalOpen(false);
     setIsDayEventsModalOpen(false);
     setErrorMessage("");
@@ -258,6 +280,7 @@ export default function CalendarPage() {
 
     setCurrentYear(newDate.getFullYear());
     setCurrentMonth(newDate.getMonth());
+    setSelectedDate(formatDate(newDate.getFullYear(), newDate.getMonth(), 1));
     setIsModalOpen(false);
     setIsDayEventsModalOpen(false);
     setErrorMessage("");
@@ -271,6 +294,7 @@ export default function CalendarPage() {
 
     setCurrentYear(now.getFullYear());
     setCurrentMonth(now.getMonth());
+    setSelectedDate(formatDate(now.getFullYear(), now.getMonth(), now.getDate()));
     setIsModalOpen(false);
     setIsDayEventsModalOpen(false);
     setErrorMessage("");
@@ -311,6 +335,102 @@ export default function CalendarPage() {
   function toggleSidebar() {
   setIsSidebarOpen((prev) => !prev);
 }
+
+  function selectDate(dateString: string) {
+    const date = new Date(dateString);
+
+    setSelectedDate(dateString);
+    setCurrentYear(date.getFullYear());
+    setCurrentMonth(date.getMonth());
+  }
+
+  function moveWeek(offset: number) {
+    const date = new Date(selectedDate || todayString);
+    date.setDate(date.getDate() + offset);
+
+    selectDate(formatDate(date.getFullYear(), date.getMonth(), date.getDate()));
+  }
+
+  function goToPrevWeek() {
+    moveWeek(-7);
+  }
+
+  function goToNextWeek() {
+    moveWeek(7);
+  }
+
+  function moveSelectedDate(offset: number) {
+    const date = new Date(selectedDate || todayString);
+    date.setDate(date.getDate() + offset);
+
+    selectDate(formatDate(date.getFullYear(), date.getMonth(), date.getDate()));
+  }
+
+  function goToPrevYear() {
+    const newYear = currentYear - 1;
+
+    setCurrentYear(newYear);
+    setSelectedDate(formatDate(newYear, currentMonth, 1));
+  }
+
+  function goToNextYear() {
+    const newYear = currentYear + 1;
+
+    setCurrentYear(newYear);
+    setSelectedDate(formatDate(newYear, currentMonth, 1));
+  }
+
+  function goToPrevPeriod() {
+    if (viewMode === "day") {
+      moveSelectedDate(-1);
+      return;
+    }
+
+    if (viewMode === "fourDays") {
+      moveSelectedDate(-4);
+      return;
+    }
+
+    if (viewMode === "week") {
+      goToPrevWeek();
+      return;
+    }
+
+    if (viewMode === "year") {
+      goToPrevYear();
+      return;
+    }
+
+    goToPrevMonth();
+  }
+
+  function goToCurrentPeriod() {
+    goToToday();
+  }
+
+  function goToNextPeriod() {
+    if (viewMode === "day") {
+      moveSelectedDate(1);
+      return;
+    }
+
+    if (viewMode === "fourDays") {
+      moveSelectedDate(4);
+      return;
+    }
+
+    if (viewMode === "week") {
+      goToNextWeek();
+      return;
+    }
+
+    if (viewMode === "year") {
+      goToNextYear();
+      return;
+    }
+
+    goToNextMonth();
+  }
 
   async function createEvent() {
     setErrorMessage("");
@@ -433,9 +553,28 @@ export default function CalendarPage() {
     }
   }
 
+  const weekLikeDayCount =
+    viewMode === "day" ? 1 : viewMode === "fourDays" ? 4 : 7;
+
+  const yearMonths = Array.from({ length: 12 }, (_, monthIndex) => {
+    const monthEvents = sortedEvents.filter((event) => {
+      const eventDate = new Date(event.start_at);
+
+      return (
+        eventDate.getFullYear() === currentYear &&
+        eventDate.getMonth() === monthIndex
+      );
+    });
+
+    return {
+      monthIndex,
+      eventCount: monthEvents.length,
+    };
+  });
+
   return (
     <>
-    <div className="">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <header>
         <CalendarHeader
           currentYear={currentYear}
@@ -456,21 +595,90 @@ export default function CalendarPage() {
       <nav>
 
       </nav>
-      <main className="relative bg-teal-100/80 min-h-screen px-2 py-3 sm:p-6">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 lg:flex-row lg:justify-center">
-          {isSidebarOpen && (
-            <aside className="lg:w-64 lg:shrink-0">
-              <EventSearch
-                searchKeyword={searchKeyword}
-                totalCount={events.length}
+      <main className="relative min-h-0 flex-1 overflow-hidden bg-teal-100/80 px-1">
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col gap-2 lg:flex-row lg:gap-0 lg:justify-center">
+      {isSidebarOpen && (
+        <aside className="min-h-0 overflow-auto lg:basis-[30%] lg:shrink-0 lg:border-r lg:border-gray-200">
+          <EventSearch
+            searchKeyword={searchKeyword}
+            totalCount={events.length}
                 filteredCount={filteredEvents.length}
-                onChangeKeyword={setSearchKeyword}
-                onClear={() => setSearchKeyword("")}
-              />
-            </aside>
+            onChangeKeyword={setSearchKeyword}
+            onClear={() => setSearchKeyword("")}
+          />
+
+          <div className="mt-4">
+            <SidebarCalendar
+              calendarDays={calendarDays}
+              holidayMap={holidayMap}
+              todayString={todayString}
+              selectedDate={selectedDate}
+              onDateClick={selectDate}
+            />
+          </div>
+        </aside>
+      )}
+
+            <section className="flex min-h-0 w-full flex-col bg-white p-2 shadow-sm sm:p-3 lg:basis-[70%] lg:shrink-0">
+          <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2">
+            <div className="flex max-w-full gap-1 overflow-x-auto rounded-md border border-gray-300 bg-gray-50 p-1">
+              {VIEW_MODE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setViewMode(option.value)}
+                  className={`shrink-0 rounded px-3 py-1.5 text-sm ${
+                    viewMode === option.value
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-white"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={goToPrevPeriod}
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              前
+            </button>
+            <button
+              type="button"
+              onClick={goToCurrentPeriod}
+              className="rounded bg-gray-800 px-3 py-1.5 text-sm text-white hover:bg-gray-700"
+            >
+              今日
+            </button>
+            <button
+              type="button"
+              onClick={goToNextPeriod}
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              次
+            </button>
+            </div>
+          </div>
+
+          {(viewMode === "day" ||
+            viewMode === "week" ||
+            viewMode === "fourDays") && (
+            <WeekCalendarView
+              selectedDate={selectedDate}
+              dayCount={weekLikeDayCount}
+              events={filteredEvents}
+              holidayMap={holidayMap}
+              todayString={todayString}
+              editingEventId={editingEventId}
+              onDateClick={openCreateModal}
+              onEventClick={startEditEvent}
+            />
           )}
 
-            <section className="w-full border bg-white p-3 shadow-sm sm:p-5 lg:w-225 lg:max-w-225 lg:shrink-0">
+          {viewMode === "month" && (
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-white p-3">
               <CalendarGrid
                 calendarDays={calendarDays}
                 holidayMap={holidayMap}
@@ -481,9 +689,66 @@ export default function CalendarPage() {
                 onEventClick={startEditEvent}
                 onMoreEventsClick={openDayEventsModal}
               />
+            </div>
+          )}
+
+          {viewMode === "year" && (
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-white p-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {yearMonths.map((month) => (
+                  <button
+                    key={month.monthIndex}
+                    type="button"
+                    onClick={() => {
+                      setCurrentMonth(month.monthIndex);
+                      setSelectedDate(formatDate(currentYear, month.monthIndex, 1));
+                      setViewMode("month");
+                    }}
+                    className="rounded-md border border-gray-200 bg-white p-4 text-left hover:bg-gray-50"
+                  >
+                    <span className="block text-lg font-semibold text-gray-900">
+                      {month.monthIndex + 1}月
+                    </span>
+                    <span className="mt-2 block text-sm text-gray-600">
+                      予定 {month.eventCount}件
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {viewMode === "schedule" && (
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-white">
+              {sortedEvents.length === 0 ? (
+                <div className="p-6 text-sm text-gray-500">
+                  表示できる予定がありません。
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {sortedEvents.map((event) => (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => startEditEvent(event)}
+                      className="block w-full px-4 py-3 text-left hover:bg-gray-50"
+                    >
+                      <span className="block text-sm font-semibold text-gray-900">
+                        {event.title}
+                      </span>
+                      <span className="mt-1 block text-xs text-gray-500">
+                        {event.start_at.slice(0, 10)}{" "}
+                        {event.all_day ? "終日" : formatTime(event.start_at)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
             </section>
           </div>
-
+          {/*
           <DayEventsModal
             isOpen={isDayEventsModalOpen}
             dateString={selectedDayEventsDate}
@@ -491,6 +756,7 @@ export default function CalendarPage() {
             onClose={closeDayEventsModal}
             onEventClick={openEventFromDayEventsModal}
           />
+          */}
 
           <EventModal
             isOpen={isModalOpen}

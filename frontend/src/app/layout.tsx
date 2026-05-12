@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Footer from "./components/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,13 +9,16 @@ export const metadata: Metadata = {
 export default function Layout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="ja">
-      <body>
-        {children}
+      <body className="overflow-hidden">
+        <div className="flex h-screen flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden pb-20">{children}</div>
+          <Footer />
+        </div>
       </body>
     </html>
-  )
+  );
 }
