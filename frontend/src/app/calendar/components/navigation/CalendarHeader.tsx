@@ -14,6 +14,7 @@ type CalendarHeaderProps = {
   onToday: () => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  onCreateEvent: () => void;
 };
 
 export default function CalendarHeader({
@@ -26,6 +27,7 @@ export default function CalendarHeader({
   onToday,
   isSidebarOpen,
   onToggleSidebar,
+  onCreateEvent,
 }: CalendarHeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -148,6 +150,7 @@ export default function CalendarHeader({
 
               <button
                 type="button"
+                onClick={onCreateEvent}
                 aria-label="作成"
                 title="作成"
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"

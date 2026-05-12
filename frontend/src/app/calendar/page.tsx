@@ -125,6 +125,7 @@ export default function CalendarPage() {
           onToday={() => runNavigation(navigation.goToToday)}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          onCreateEvent={() => eventForm.openCreateModal(navigation.selectedDate)}
         />
       </header>
 

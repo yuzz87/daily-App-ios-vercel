@@ -8,27 +8,27 @@ const footerLinks = [
   {
     href: "/calendar",
     label: "カレンダー",
-    icon: "/birdhouse.svg",
+    icon: "/calendar-heart.svg",
   },
   {
-    href: "/search",
-    label: "検索",
-    icon: "/search.svg",
+    href: "/taskmemo",
+    label: "メモ",
+    icon: "/notebook-pen.svg",
   },
   {
-    href: "/create",
+    href: "/coffee",
     label: "作成",
-    icon: "/square-plus.svg",
+    icon: "/coffee.svg",
   },
   {
-    href: "/settings",
-    label: "設定",
-    icon: "/settings.svg",
+    href: "/prediction",
+    label: "予測",
+    icon: "/database-zap.svg",
   },
   {
-    href: "/profile",
-    label: "プロフィール",
-    icon: "/user-round.svg",
+    href: "/timer",
+    label: "ストップウォッチ",
+    icon: "/hourglass.svg",
   },
 ];
 
