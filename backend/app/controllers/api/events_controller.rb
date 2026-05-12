@@ -11,7 +11,11 @@ class Api::EventsController < ApplicationController
       start_date = Time.zone.local(year, month, 1).beginning_of_day
       end_date = start_date.end_of_month.end_of_day
 
-      events = events.where(start_at: start_date..end_date)
+      events = events.where(
+        "start_at <= ? AND end_at >= ?",
+        end_date,
+        start_date
+      )
     end
 
     render json: events.map(&:as_json_for_api)

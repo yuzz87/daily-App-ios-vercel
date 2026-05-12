@@ -1,5 +1,13 @@
-import type { CalendarEvent } from "../types";
+import type { CalendarEvent } from "../../types";
+import {
+  createEventSegments,
+  getSegmentLaneCount,
+  isMultiDayEvent,
+} from "../../utils/eventSegments";
+import { formatDate } from "../../utils/date";
 import WeekCalendarColumn from "./WeekCalendarColumn";
+import WeekHeader from "./WeekHeader";
+import WeekTimeGrid from "./WeekTimeGrid";
 
 type WeekCalendarViewProps = {
   selectedDate: string;
@@ -12,12 +20,9 @@ type WeekCalendarViewProps = {
   onEventClick: (event: CalendarEvent) => void;
 };
 
-function formatDate(year: number, month: number, day: number) {
-  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(
-    2,
-    "0"
-  )}`;
-}
+const DAY_HEADER_HEIGHT = 80;
+const EVENT_BAR_HEIGHT = 22;
+const EVENT_BAR_GAP = 4;
 
 function getDisplayDays(baseDateString: string, dayCount: number) {
   const baseDate = baseDateString ? new Date(baseDateString) : new Date();
@@ -55,9 +60,18 @@ export default function WeekCalendarView({
   onEventClick,
 }: WeekCalendarViewProps) {
   const weekDays = getDisplayDays(selectedDate || todayString, dayCount);
+  const weekEventSegments = createEventSegments(
+    weekDays.map((weekDay) => weekDay.dateString),
+    events.filter(isMultiDayEvent)
+  );
+  const laneCount = getSegmentLaneCount(weekEventSegments);
+  const headerHeight =
+    DAY_HEADER_HEIGHT + laneCount * (EVENT_BAR_HEIGHT + EVENT_BAR_GAP);
 
   const eventMap = new Map<string, CalendarEvent[]>();
   events.forEach((event) => {
+    if (isMultiDayEvent(event)) return;
+
     const dateString = event.start_at.slice(0, 10);
 
     if (!eventMap.has(dateString)) {
@@ -77,30 +91,47 @@ export default function WeekCalendarView({
         }}
       >
         <div className="border-r bg-gray-50">
-          <div className="sticky top-0 z-20 h-20 border-b bg-gray-50" />
-          <div className="min-h-[1536px]">
-            {TIME_LABELS.map((time) => (
-              <div
-                key={time}
-                className="h-16 border-b px-2 pt-1 text-right text-[11px] text-gray-500"
-              >
-                {time}
-              </div>
-            ))}
-          </div>
+          <div
+            className="sticky top-0 z-20 border-b bg-gray-50"
+            style={{ height: headerHeight }}
+          />
+          <WeekTimeGrid labels={TIME_LABELS} />
         </div>
-        {weekDays.map((weekDay) => (
-          <WeekCalendarColumn
-            key={weekDay.dateString}
-            weekDay={weekDay}
-            holidayName={holidayMap.get(weekDay.dateString)}
-            events={eventMap.get(weekDay.dateString) || []}
+        <div
+          className="col-span-full col-start-2"
+          style={{ gridColumn: `2 / span ${dayCount}` }}
+        >
+          <WeekHeader
+            weekDays={weekDays}
+            holidayMap={holidayMap}
             todayString={todayString}
+            dayCount={dayCount}
+            headerHeight={headerHeight}
+            segments={weekEventSegments}
             editingEventId={editingEventId}
+            dayHeaderHeight={DAY_HEADER_HEIGHT}
+            eventBarHeight={EVENT_BAR_HEIGHT}
+            eventBarGap={EVENT_BAR_GAP}
             onDateClick={onDateClick}
             onEventClick={onEventClick}
           />
-        ))}
+
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${dayCount}, minmax(96px, 1fr))`,
+            }}
+          >
+            {weekDays.map((weekDay) => (
+              <WeekCalendarColumn
+                key={weekDay.dateString}
+                events={eventMap.get(weekDay.dateString) || []}
+                editingEventId={editingEventId}
+                onEventClick={onEventClick}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

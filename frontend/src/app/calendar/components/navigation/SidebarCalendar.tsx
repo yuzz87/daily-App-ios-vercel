@@ -1,4 +1,4 @@
-import type { CalendarDay } from "../types";
+import type { CalendarDay } from "../../types";
 
 type SidebarCalendarProps = {
   calendarDays: CalendarDay[];
