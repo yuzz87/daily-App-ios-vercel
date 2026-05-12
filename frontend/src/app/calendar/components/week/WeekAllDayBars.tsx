@@ -6,7 +6,6 @@ type WeekAllDayBarsProps = {
   segments: EventSegment[];
   dayCount: number;
   editingEventId: number | null;
-  dayHeaderHeight: number;
   eventBarHeight: number;
   eventBarGap: number;
   onEventClick: (event: CalendarEvent) => void;
@@ -16,7 +15,6 @@ export default function WeekAllDayBars({
   segments,
   dayCount,
   editingEventId,
-  dayHeaderHeight,
   eventBarHeight,
   eventBarGap,
   onEventClick,
@@ -24,7 +22,7 @@ export default function WeekAllDayBars({
   return (
     <>
       {segments.map((segment) => {
-        const top = dayHeaderHeight + segment.lane * (eventBarHeight + eventBarGap);
+        const top = segment.lane * (eventBarHeight + eventBarGap);
 
         return (
           <EventBar

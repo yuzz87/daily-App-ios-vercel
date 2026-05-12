@@ -40,34 +40,42 @@ export default function WeekHeader({
 }: WeekHeaderProps) {
   return (
     <div
-      className="sticky top-0 z-20 grid border-b bg-white"
+      className="sticky top-0 z-20 border-b bg-white"
       style={{
-        gridTemplateColumns: `repeat(${dayCount}, minmax(96px, 1fr))`,
         height: headerHeight,
       }}
     >
-      {weekDays.map((weekDay) => (
-        <DayHeaderCell
-          key={weekDay.dateString}
-          dateString={weekDay.dateString}
-          day={weekDay.day}
-          weekDay={weekDay.weekDay}
-          holidayName={holidayMap.get(weekDay.dateString)}
-          todayString={todayString}
-          variant="week"
-          onDateClick={onDateClick}
-        />
-      ))}
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns: `repeat(${dayCount}, minmax(96px, 1fr))`,
+          height: dayHeaderHeight,
+        }}
+      >
+        {weekDays.map((weekDay) => (
+          <DayHeaderCell
+            key={weekDay.dateString}
+            dateString={weekDay.dateString}
+            day={weekDay.day}
+            weekDay={weekDay.weekDay}
+            holidayName={holidayMap.get(weekDay.dateString)}
+            todayString={todayString}
+            variant="week"
+            onDateClick={onDateClick}
+          />
+        ))}
+      </div>
 
-      <WeekAllDayBars
-        segments={segments}
-        dayCount={dayCount}
-        editingEventId={editingEventId}
-        dayHeaderHeight={dayHeaderHeight}
-        eventBarHeight={eventBarHeight}
-        eventBarGap={eventBarGap}
-        onEventClick={onEventClick}
-      />
+      <div className="relative" style={{ height: headerHeight - dayHeaderHeight }}>
+        <WeekAllDayBars
+          segments={segments}
+          dayCount={dayCount}
+          editingEventId={editingEventId}
+          eventBarHeight={eventBarHeight}
+          eventBarGap={eventBarGap}
+          onEventClick={onEventClick}
+        />
+      </div>
     </div>
   );
 }
