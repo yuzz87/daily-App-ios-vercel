@@ -1,6 +1,32 @@
-ActiveRecord::Schema[8.1].define(version: 2026_05_08_064631) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_13_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "coffee_beans", force: :cascade do |t|
+    t.string "brand"
+    t.string "code"
+    t.string "country"
+    t.datetime "created_at", null: false
+    t.text "description_ja"
+    t.string "elevation"
+    t.string "farm"
+    t.string "farmer"
+    t.jsonb "flavor_notes", default: [], null: false
+    t.string "image_url"
+    t.boolean "is_limited"
+    t.string "name"
+    t.string "name_ja"
+    t.string "process"
+    t.text "raw_text"
+    t.string "region"
+    t.string "roast_level"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.string "variety"
+    t.index ["code"], name: "index_coffee_beans_on_code"
+    t.index ["flavor_notes"], name: "index_coffee_beans_on_flavor_notes", using: :gin
+    t.index ["status"], name: "index_coffee_beans_on_status"
+  end
 
   create_table "events", force: :cascade do |t|
     t.boolean "all_day", default: false, null: false
@@ -21,4 +47,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_064631) do
     t.datetime "updated_at", null: false
     t.index ["date"], name: "index_holidays_on_date", unique: true
   end
+
+  create_table "tasting_notes", force: :cascade do |t|
+    t.integer "acidity"
+    t.integer "aroma"
+    t.integer "bitterness"
+    t.integer "body"
+    t.string "brew_method"
+    t.integer "brew_time"
+    t.bigint "coffee_bean_id", null: false
+    t.decimal "coffee_grams", precision: 6, scale: 2
+    t.datetime "created_at", null: false
+    t.string "grind_size"
+    t.text "memo"
+    t.integer "rating"
+    t.integer "sweetness"
+    t.datetime "updated_at", null: false
+    t.decimal "water_grams", precision: 7, scale: 2
+    t.integer "water_temp"
+    t.index ["coffee_bean_id"], name: "index_tasting_notes_on_coffee_bean_id"
+  end
+
+  add_foreign_key "tasting_notes", "coffee_beans"
 end
