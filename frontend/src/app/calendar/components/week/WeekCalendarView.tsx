@@ -20,7 +20,7 @@ type WeekCalendarViewProps = {
   onEventClick: (event: CalendarEvent) => void;
 };
 
-const DAY_HEADER_HEIGHT = 80;
+const DAY_HEADER_HEIGHT = 44;
 const EVENT_BAR_HEIGHT = 22;
 const EVENT_BAR_GAP = 4;
 

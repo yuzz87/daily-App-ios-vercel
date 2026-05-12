@@ -1,4 +1,5 @@
 import type { CalendarEvent } from "../../types";
+import { DAY_HEIGHT, HOUR_HEIGHT } from "./timeGrid";
 import WeekEventBlock from "./WeekEventBlock";
 
 type WeekCalendarColumnProps = {
@@ -7,8 +8,6 @@ type WeekCalendarColumnProps = {
   onEventClick: (event: CalendarEvent) => void;
 };
 
-const HOUR_HEIGHT = 64;
-const DAY_HEIGHT = HOUR_HEIGHT * 24;
 const MIN_EVENT_HEIGHT = 24;
 
 function getMinutesFromDayStart(dateTime: string) {
@@ -44,7 +43,7 @@ export default function WeekCalendarColumn({
 }: WeekCalendarColumnProps) {
   return (
     <div
-      className="relative border-r bg-[linear-gradient(to_bottom,transparent_63px,#e5e7eb_64px)] bg-[length:100%_64px]"
+      className="relative border-r bg-[linear-gradient(to_bottom,transparent_39px,#e5e7eb_40px)] bg-[length:100%_40px]"
       style={{ minHeight: DAY_HEIGHT }}
     >
       {events.map((event) => {

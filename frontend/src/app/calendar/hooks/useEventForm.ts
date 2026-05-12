@@ -49,7 +49,7 @@ export function useEventForm({
     setEventEndDate(dateString);
     setEventEndTime("10:00");
     setEventAllDay(false);
-    setEventColor("#3b82f6");
+    setEventColor("#aecbfa");
   }
 
   function closeModal() {

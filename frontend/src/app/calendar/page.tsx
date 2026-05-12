@@ -10,6 +10,7 @@ import EventModal from "./components/modals/EventModal";
 import CalendarGrid from "./components/month/CalendarGrid";
 import CalendarHeader from "./components/navigation/CalendarHeader";
 import SidebarCalendar from "./components/navigation/SidebarCalendar";
+import SidebarUpcomingEvents from "./components/navigation/SidebarUpcomingEvents";
 import WeekCalendarView from "./components/week/WeekCalendarView";
 import { formatDate, formatTime } from "./utils/date";
 
@@ -135,10 +136,18 @@ export default function CalendarPage() {
               <div className="mt-4">
                 <SidebarCalendar
                   calendarDays={navigation.calendarDays}
+                  events={events}
                   holidayMap={holidayMap}
                   todayString={navigation.todayString}
                   selectedDate={navigation.selectedDate}
                   onDateClick={navigation.selectDate}
+                />
+              </div>
+              <div className="mt-3">
+                <SidebarUpcomingEvents
+                  events={events}
+                  todayString={navigation.todayString}
+                  onEventClick={eventForm.startEditEvent}
                 />
               </div>
             </aside>
