@@ -8,6 +8,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 export default function TimerPage() {
   const {
+    category,
     elapsedTime,
     currentLapTime,
     isRunning,
@@ -18,8 +19,8 @@ export default function TimerPage() {
     resetTimer,
     recordLap,
     markSaved,
+    setCategory,
   } = useStopwatch()
-  const [category, setCategory] = useState("Programming")
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)

@@ -10,6 +10,7 @@ import {
 } from "react"
 
 type StopwatchSnapshot = {
+  category: string
   elapsedTime: number
   currentLapTime: number
   isRunning: boolean
@@ -21,7 +22,16 @@ type StopwatchSnapshot = {
   hasUnsavedStop: boolean
 }
 
+type ActiveTimerResponse = {
+  category: string
+  elapsed_seconds: number
+  is_running: boolean
+  started_at: string | null
+  laps: number[]
+}
+
 type StopwatchContextValue = {
+  category: string
   elapsedTime: number
   currentLapTime: number
   isRunning: boolean
@@ -32,12 +42,17 @@ type StopwatchContextValue = {
   resetTimer: () => void
   recordLap: () => void
   markSaved: () => void
+  setCategory: (category: string) => void
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 const STORAGE_KEY = "next-rails-stopwatch"
+const DEFAULT_CATEGORY = "Programming"
+const SYNC_INTERVAL_MS = 5000
 const StopwatchContext = createContext<StopwatchContextValue | null>(null)
 
 export function StopwatchProvider({ children }: { children: ReactNode }) {
+  const [category, setCategoryState] = useState(DEFAULT_CATEGORY)
   const [elapsedTime, setElapsedTime] = useState(0)
   const [currentLapTime, setCurrentLapTime] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
@@ -50,6 +65,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
   const savedElapsedTimeRef = useRef(0)
   const savedLapTimeRef = useRef(0)
   const latestStateRef = useRef({
+    category: DEFAULT_CATEGORY,
     isRunning: false,
     laps: [] as number[],
     hasUnsavedStop: false,
@@ -73,6 +89,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
   function saveSnapshot(next?: Partial<StopwatchSnapshot>) {
     const liveTimes = getLiveTimes()
     const snapshot: StopwatchSnapshot = {
+      category,
       elapsedTime: liveTimes.elapsed,
       currentLapTime: liveTimes.lap,
       isRunning,
@@ -86,6 +103,37 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     }
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+  }
+
+  async function syncActiveTimer(next?: Partial<StopwatchSnapshot>) {
+    if (!API_BASE_URL) return
+
+    const liveTimes = getLiveTimes()
+    const nextCategory = next?.category ?? category
+    const nextElapsedTime = next?.elapsedTime ?? liveTimes.elapsed
+    const nextIsRunning = next?.isRunning ?? isRunning
+    const nextLaps = next?.laps ?? laps
+    const nextStartedAt = nextIsRunning ? new Date().toISOString() : null
+
+    try {
+      await fetch(`${API_BASE_URL}/active_timer`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          active_timer: {
+            category: nextCategory,
+            elapsed_seconds: Math.floor(nextElapsedTime / 1000),
+            is_running: nextIsRunning,
+            started_at: nextIsRunning ? nextStartedAt : null,
+            laps: nextLaps.map((lap) => Math.floor(lap / 1000)),
+          },
+        }),
+      })
+    } catch {
+      // Local timer behavior should continue even if cross-device sync fails.
+    }
   }
 
   function beginInterval() {
@@ -111,50 +159,131 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function applySnapshot(snapshot: StopwatchSnapshot) {
+    totalStartTimeRef.current = snapshot.totalStartTime
+    lapStartTimeRef.current = snapshot.lapStartTime
+    savedElapsedTimeRef.current = snapshot.savedElapsedTime
+    savedLapTimeRef.current = snapshot.savedLapTime
+
+    setCategoryState(snapshot.category || DEFAULT_CATEGORY)
+    setElapsedTime(snapshot.elapsedTime)
+    setCurrentLapTime(snapshot.currentLapTime)
+    setLaps(Array.isArray(snapshot.laps) ? snapshot.laps : [])
+    setHasUnsavedStop(snapshot.hasUnsavedStop)
+    setIsRunning(snapshot.isRunning)
+
+    if (snapshot.isRunning) {
+      beginInterval()
+    } else {
+      clearRunningInterval()
+    }
+  }
+
+  function applyActiveTimer(activeTimer: ActiveTimerResponse) {
+    const elapsedMs = Math.max(activeTimer.elapsed_seconds, 0) * 1000
+    const lapsMs = Array.isArray(activeTimer.laps)
+      ? activeTimer.laps.map((lap) => Math.max(lap, 0) * 1000)
+      : []
+    const lapElapsedMs = Math.max(
+      elapsedMs - lapsMs.reduce((sum, lap) => sum + lap, 0),
+      0,
+    )
+    const now = Date.now()
+    const totalStartTime = activeTimer.is_running ? now - elapsedMs : null
+    const lapStartTime = activeTimer.is_running ? now - lapElapsedMs : null
+
+    applySnapshot({
+      category: activeTimer.category || DEFAULT_CATEGORY,
+      elapsedTime: elapsedMs,
+      currentLapTime: lapElapsedMs,
+      isRunning: activeTimer.is_running,
+      laps: lapsMs,
+      totalStartTime,
+      lapStartTime,
+      savedElapsedTime: activeTimer.is_running ? elapsedMs : elapsedMs,
+      savedLapTime: activeTimer.is_running ? lapElapsedMs : lapElapsedMs,
+      hasUnsavedStop: elapsedMs > 0 && !activeTimer.is_running,
+    })
+  }
+
+  async function loadActiveTimer() {
+    if (!API_BASE_URL) return false
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/active_timer`, {
+        cache: "no-store",
+      })
+
+      if (!res.ok) return false
+
+      const activeTimer = (await res.json()) as ActiveTimerResponse
+      applyActiveTimer(activeTimer)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   useEffect(() => {
     latestStateRef.current = {
+      category,
       isRunning,
       laps,
       hasUnsavedStop,
     }
-  }, [isRunning, laps, hasUnsavedStop])
+  }, [category, isRunning, laps, hasUnsavedStop])
 
   useEffect(() => {
-    const rawSnapshot = window.localStorage.getItem(STORAGE_KEY)
+    let isMounted = true
 
-    if (!rawSnapshot) return
+    async function initializeTimer() {
+      const loadedFromServer = await loadActiveTimer()
+      if (!isMounted || loadedFromServer) return
 
-    try {
-      const snapshot = JSON.parse(rawSnapshot) as StopwatchSnapshot
-      const now = Date.now()
-      const nextElapsed =
-        snapshot.isRunning && snapshot.totalStartTime !== null
-          ? now - snapshot.totalStartTime
-          : snapshot.elapsedTime
-      const nextLap =
-        snapshot.isRunning && snapshot.lapStartTime !== null
-          ? now - snapshot.lapStartTime
-          : snapshot.currentLapTime
+      const rawSnapshot = window.localStorage.getItem(STORAGE_KEY)
 
-      totalStartTimeRef.current = snapshot.totalStartTime
-      lapStartTimeRef.current = snapshot.lapStartTime
-      savedElapsedTimeRef.current = snapshot.savedElapsedTime
-      savedLapTimeRef.current = snapshot.savedLapTime
+      if (!rawSnapshot) return
 
-      window.setTimeout(() => {
-        setElapsedTime(nextElapsed)
-        setCurrentLapTime(nextLap)
-        setLaps(Array.isArray(snapshot.laps) ? snapshot.laps : [])
-        setHasUnsavedStop(snapshot.hasUnsavedStop)
-        setIsRunning(snapshot.isRunning)
+      try {
+        const snapshot = JSON.parse(rawSnapshot) as StopwatchSnapshot
+        const now = Date.now()
+        const nextElapsed =
+          snapshot.isRunning && snapshot.totalStartTime !== null
+            ? now - snapshot.totalStartTime
+            : snapshot.elapsedTime
+        const nextLap =
+          snapshot.isRunning && snapshot.lapStartTime !== null
+            ? now - snapshot.lapStartTime
+            : snapshot.currentLapTime
 
-        if (snapshot.isRunning) {
-          beginInterval()
-        }
-      }, 0)
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY)
+        applySnapshot({
+          ...snapshot,
+          category: snapshot.category || DEFAULT_CATEGORY,
+          elapsedTime: nextElapsed,
+          currentLapTime: nextLap,
+        })
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY)
+      }
     }
+
+    void initializeTimer()
+
+    return () => {
+      isMounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const syncInterval = window.setInterval(() => {
+      void loadActiveTimer()
+    }, SYNC_INTERVAL_MS)
+
+    return () => {
+      window.clearInterval(syncInterval)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -177,6 +306,12 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  function setCategory(nextCategory: string) {
+    setCategoryState(nextCategory)
+    saveSnapshot({ category: nextCategory })
+    void syncActiveTimer({ category: nextCategory })
+  }
+
   function startTimer() {
     if (intervalRef.current !== null) return
 
@@ -187,6 +322,11 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     setIsRunning(true)
     beginInterval()
     saveSnapshot({
+      isRunning: true,
+      totalStartTime: totalStartTimeRef.current,
+      lapStartTime: lapStartTimeRef.current,
+    })
+    void syncActiveTimer({
       isRunning: true,
       totalStartTime: totalStartTimeRef.current,
       lapStartTime: lapStartTimeRef.current,
@@ -212,16 +352,42 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
       savedLapTimeRef.current = latestLapTime
     }
 
+    totalStartTimeRef.current = null
+    lapStartTimeRef.current = null
     setIsRunning(false)
     setHasUnsavedStop(latestElapsedTime > 0)
     saveSnapshot({
       elapsedTime: latestElapsedTime,
       currentLapTime: latestLapTime,
       isRunning: false,
+      totalStartTime: null,
+      lapStartTime: null,
       savedElapsedTime: latestElapsedTime,
       savedLapTime: latestLapTime,
       hasUnsavedStop: latestElapsedTime > 0,
     })
+    void syncActiveTimer({
+      elapsedTime: latestElapsedTime,
+      currentLapTime: latestLapTime,
+      isRunning: false,
+      totalStartTime: null,
+      lapStartTime: null,
+      savedElapsedTime: latestElapsedTime,
+      savedLapTime: latestLapTime,
+      hasUnsavedStop: latestElapsedTime > 0,
+    })
+  }
+
+  async function resetRemoteTimer() {
+    if (!API_BASE_URL) return
+
+    try {
+      await fetch(`${API_BASE_URL}/active_timer`, {
+        method: "DELETE",
+      })
+    } catch {
+      // Local reset should still happen if sync fails.
+    }
   }
 
   function resetTimer() {
@@ -239,6 +405,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     savedLapTimeRef.current = 0
 
     window.localStorage.removeItem(STORAGE_KEY)
+    void resetRemoteTimer()
   }
 
   function recordLap() {
@@ -259,6 +426,12 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
       lapStartTime: now,
       savedLapTime: 0,
     })
+    void syncActiveTimer({
+      laps: nextLaps,
+      currentLapTime: 0,
+      lapStartTime: now,
+      savedLapTime: 0,
+    })
   }
 
   function markSaved() {
@@ -269,6 +442,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
   return (
     <StopwatchContext.Provider
       value={{
+        category,
         elapsedTime,
         currentLapTime,
         isRunning,
@@ -279,6 +453,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
         resetTimer,
         recordLap,
         markSaved,
+        setCategory,
       }}
     >
       {children}

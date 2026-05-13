@@ -11,6 +11,7 @@ Rails.application.routes.draw do
     end
     resources :tasting_notes, only: [:update, :destroy]
     resources :study_sessions, only: [:index, :create]
+    resource :active_timer, only: [:show, :update, :destroy]
   end
 
   get "up" => "rails/health#show", as: :rails_health_check
