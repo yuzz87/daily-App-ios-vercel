@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Footer from "./components/Footer";
+import { StopwatchProvider } from "./components/StopwatchProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,10 +15,12 @@ export default function Layout({
   return (
     <html lang="ja">
       <body className="overflow-hidden">
-        <div className="flex h-screen flex-col overflow-hidden">
-          <div className="min-h-0 flex-1 overflow-hidden pb-20">{children}</div>
-          <Footer />
-        </div>
+        <StopwatchProvider>
+          <div className="flex h-screen flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-hidden pb-20">{children}</div>
+            <Footer />
+          </div>
+        </StopwatchProvider>
       </body>
     </html>
   );

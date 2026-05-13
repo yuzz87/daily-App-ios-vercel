@@ -17,7 +17,7 @@ const footerLinks = [
   },
   {
     href: "/coffee",
-    label: "作成",
+    label: "コーヒー",
     icon: "/coffee.svg",
   },
   {
