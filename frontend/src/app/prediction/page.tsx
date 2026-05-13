@@ -1,3 +1,5 @@
+import WeeklyTimerChart, { type WeekBar } from "./WeeklyTimerChart"
+
 export const dynamic = "force-dynamic"
 
 type StudySession = {
@@ -27,7 +29,7 @@ async function fetchStudySessions(): Promise<StudySessionResult> {
   if (!API_BASE_URL) {
     return {
       studySessions: [],
-      error: "NEXT_PUBLIC_API_BASE_URL is not configured.",
+      error: "NEXT_PUBLIC_API_BASE_URL \u304c\u8a2d\u5b9a\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002",
     }
   }
 
@@ -39,7 +41,7 @@ async function fetchStudySessions(): Promise<StudySessionResult> {
     if (!res.ok) {
       return {
         studySessions: [],
-        error: "Failed to load study sessions.",
+        error: "\u30bf\u30a4\u30de\u30fc\u8a18\u9332\u306e\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002",
       }
     }
 
@@ -52,7 +54,7 @@ async function fetchStudySessions(): Promise<StudySessionResult> {
   } catch {
     return {
       studySessions: [],
-      error: "Could not connect to the Rails API.",
+      error: "Rails API \u306b\u63a5\u7d9a\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002",
     }
   }
 }
@@ -63,14 +65,14 @@ function formatDuration(seconds: number): string {
   const remainingSeconds = seconds % 60
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m`
+    return `${hours}\u6642\u9593 ${minutes}\u5206`
   }
 
   if (minutes > 0) {
-    return `${minutes}m ${remainingSeconds}s`
+    return `${minutes}\u5206 ${remainingSeconds}\u79d2`
   }
 
-  return `${remainingSeconds}s`
+  return `${remainingSeconds}\u79d2`
 }
 
 function dateKeyFromDate(date: Date): string {
@@ -83,6 +85,14 @@ function dateKeyFromDate(date: Date): string {
 
 function dateKey(value: string): string {
   return dateKeyFromDate(new Date(value))
+}
+
+function monthKey(value: string): string {
+  const date = new Date(value)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+
+  return `${year}-${month}`
 }
 
 function startOfWeekSunday(date: Date): Date {
@@ -109,11 +119,16 @@ function sumBy(
   }
 
   return Array.from(totals.entries())
-    .map(([key, durationSeconds]) => ({ key, durationSeconds }))
-    .sort((a, b) => b.key.localeCompare(a.key))
 }
 
-function buildCurrentWeekBars(studySessions: StudySession[]) {
+function averageTotal(totals: Array<[string, number]>): number {
+  if (totals.length === 0) return 0
+
+  const totalSeconds = totals.reduce((sum, [, seconds]) => sum + seconds, 0)
+  return Math.round(totalSeconds / totals.length)
+}
+
+function buildCurrentWeekBars(studySessions: StudySession[]): WeekBar[] {
   const weekStart = startOfWeekSunday(new Date())
   const totals = new Map<string, number>()
 
@@ -140,19 +155,55 @@ function buildCurrentWeekBars(studySessions: StudySession[]) {
 
   return bars.map((bar) => ({
     ...bar,
+    formattedDuration: formatDuration(bar.durationSeconds),
     heightPercent: Math.max(6, Math.round((bar.durationSeconds / maxSeconds) * 100)),
   }))
 }
 
+function predictTodaySeconds(studySessions: StudySession[]): number {
+  if (studySessions.length === 0) return 0
+
+  const today = new Date()
+  const todayKey = dateKeyFromDate(today)
+  const todayDay = today.getDay()
+  const sameWeekdaySessions = studySessions.filter((session) => {
+    const recordedAt = new Date(session.recorded_at)
+    return recordedAt.getDay() === todayDay && dateKey(session.recorded_at) !== todayKey
+  })
+
+  if (sameWeekdaySessions.length > 0) {
+    return Math.round(
+      sameWeekdaySessions.reduce(
+        (sum, session) => sum + session.duration_seconds,
+        0,
+      ) / sameWeekdaySessions.length,
+    )
+  }
+
+  return averageTotal(sumBy(studySessions, dateKey))
+}
+
 export default async function PredictionPage() {
   const { studySessions, error } = await fetchStudySessions()
-  const dailyTotals = sumBy(studySessions, dateKey)
-  const weeklyTotals = sumBy(studySessions, weekKey)
   const weekBars = buildCurrentWeekBars(studySessions)
+  const todayKey = dateKeyFromDate(new Date())
+  const todayBar = weekBars.find((bar) => bar.key === todayKey)
+  const maxWeekBar = weekBars.reduce(
+    (maxBar, bar) =>
+      bar.durationSeconds > maxBar.durationSeconds ? bar : maxBar,
+    weekBars[0],
+  )
   const currentWeekTotal = weekBars.reduce(
     (sum, bar) => sum + bar.durationSeconds,
     0,
   )
+  const totalSeconds = studySessions.reduce(
+    (sum, session) => sum + session.duration_seconds,
+    0,
+  )
+  const weeklyAverageSeconds = averageTotal(sumBy(studySessions, weekKey))
+  const monthlyAverageSeconds = averageTotal(sumBy(studySessions, monthKey))
+  const predictedTodaySeconds = predictTodaySeconds(studySessions)
 
   return (
     <main className="h-full overflow-y-auto bg-gray-50 px-4 py-6 text-gray-900 sm:px-6 lg:px-8">
@@ -163,73 +214,32 @@ export default async function PredictionPage() {
           </section>
         ) : null}
 
-        <section className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm text-gray-500">This Week</p>
-              <h1 className="text-3xl font-semibold">
-                {formatDuration(currentWeekTotal)}
-              </h1>
-            </div>
-            <p className="text-sm text-gray-500">Timer data</p>
-          </div>
-
-          <div className="mt-6 grid h-48 grid-cols-7 items-end gap-3 border-b border-gray-200 px-1 pb-2">
-            {weekBars.map((bar) => (
-              <div key={bar.key} className="flex h-full flex-col justify-end gap-2">
-                <div className="flex flex-1 items-end">
-                  <div
-                    className="w-full rounded-t-md bg-indigo-500"
-                    style={{ height: `${bar.heightPercent}%` }}
-                    title={`${bar.key} ${formatDuration(bar.durationSeconds)}`}
-                  />
-                </div>
-                <div className="text-center text-xs font-medium text-gray-500">
-                  {bar.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <WeeklyTimerChart
+          bars={weekBars}
+          maxDayLabel={`${maxWeekBar.label} ${formatDuration(maxWeekBar.durationSeconds)}`}
+          todayLabel={formatDuration(todayBar?.durationSeconds ?? 0)}
+          totalLabel={formatDuration(currentWeekTotal)}
+        />
 
         <section className="grid grid-cols-2 gap-4">
-          <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold">Daily totals</h2>
-            <div className="mt-3 grid gap-2 text-sm">
-              {dailyTotals.length > 0 ? (
-                dailyTotals.slice(0, 7).map((total) => (
-                  <div key={total.key} className="grid gap-1">
-                    <span>{total.key}</span>
-                    <span className="font-semibold">
-                      {formatDuration(total.durationSeconds)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No records</p>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold">Weekly totals</h2>
-            <div className="mt-3 grid gap-2 text-sm">
-              {weeklyTotals.length > 0 ? (
-                weeklyTotals.slice(0, 7).map((total) => (
-                  <div key={total.key} className="grid gap-1">
-                    <span>Week of {total.key}</span>
-                    <span className="font-semibold">
-                      {formatDuration(total.durationSeconds)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No records</p>
-              )}
-            </div>
-          </div>
+          <MetricCard label="週別平均" value={formatDuration(weeklyAverageSeconds)} />
+          <MetricCard label="月別平均" value={formatDuration(monthlyAverageSeconds)} />
+          <MetricCard label="累計時間" value={formatDuration(totalSeconds)} />
+          <MetricCard
+            label="今日の予測学習時間"
+            value={formatDuration(predictedTodaySeconds)}
+          />
         </section>
       </div>
     </main>
+  )
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+      <h2 className="text-sm font-semibold text-gray-500">{label}</h2>
+      <p className="mt-2 text-xl font-semibold text-gray-900">{value}</p>
+    </div>
   )
 }
