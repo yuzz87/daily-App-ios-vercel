@@ -15,7 +15,7 @@ export default function TimerPage() {
     hasUnsavedStop,
     startTimer,
     stopTimer,
-      resetTimer,
+    resetTimer,
     recordLap,
     markSaved,
   } = useStopwatch()
@@ -128,74 +128,76 @@ export default function TimerPage() {
     <>
       <ThreeBox />
 
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-start gap-6 px-4 pt-10 pb-32 text-gray-950">
-        <div className="relative flex flex-col items-center gap-6">
-          <section className="rounded-md border border-gray-950 bg-white/85 px-8 py-5 shadow-[5px_6px_2px_rgba(0,0,0,0.8)]">
-            <p className="tabular-nums text-5xl font-bold sm:text-6xl">
-              {formatTime(elapsedTime)}
-            </p>
-          </section>
+      <main className="relative z-10 min-h-screen overflow-x-auto px-4 pt-10 pb-32 text-gray-950">
+        <div className="relative mx-auto w-fit">
+          <div className="flex flex-col items-center gap-6">
+            <section className="rounded-md border border-gray-950 bg-white/85 px-8 py-5 shadow-[5px_6px_2px_rgba(0,0,0,0.8)]">
+              <p className="tabular-nums text-5xl font-bold sm:text-6xl">
+                {formatTime(elapsedTime)}
+              </p>
+            </section>
 
-          <section className="flex gap-14 sm:gap-20">
-            {isRunning ? (
+            <section className="flex gap-14 sm:gap-20">
+              {isRunning ? (
+                <button
+                  type="button"
+                  onClick={recordLap}
+                  className="h-20 w-20 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
+                >
+                  Lap
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="h-20 w-20 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
+                >
+                  Reset
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={recordLap}
-                className="h-20 w-20 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
+                onClick={handleStartStop}
+                className={`h-20 w-20 rounded-full border border-gray-950 text-sm font-bold shadow-md transition ${
+                  isRunning
+                    ? "bg-red-300 hover:bg-red-400"
+                    : "bg-green-300 hover:bg-green-400"
+                }`}
               >
-                Lap
+                {isRunning ? "Stop" : "Start"}
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleReset}
-                className="h-20 w-20 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
-              >
-                Reset
-              </button>
-            )}
+            </section>
 
-            <button
-              type="button"
-              onClick={handleStartStop}
-              className={`h-20 w-20 rounded-full border border-gray-950 text-sm font-bold shadow-md transition ${
-                isRunning
-                  ? "bg-red-300 hover:bg-red-400"
-                  : "bg-green-300 hover:bg-green-400"
-              }`}
-            >
-              {isRunning ? "Stop" : "Start"}
-            </button>
+            <section className="w-full max-w-sm rounded-md bg-white/85 px-4 shadow-md">
+              {elapsedTime === 0 && laps.length === 0 ? (
+                <p className="py-4 text-center text-sm text-gray-600" />
+              ) : (
+                <ul>
+                  {elapsedTime > 0 ? (
+                    <li className="flex justify-between border-b py-3 text-sm">
+                      <span>Lap {laps.length + 1}</span>
+                      <span className="tabular-nums">
+                        {formatTime(currentLapTime)}
+                      </span>
+                    </li>
+                  ) : null}
+
+                  {laps.map((lap, index) => (
+                    <li
+                      key={`${lap}-${index}`}
+                      className="flex justify-between border-b py-3 text-sm last:border-b-0"
+                    >
+                      <span>Lap {laps.length - index}</span>
+                      <span className="tabular-nums">{formatTime(lap)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
           </section>
+          </div>
 
-          <section className="w-full max-w-sm rounded-md bg-white/85 px-4 shadow-md">
-            {elapsedTime === 0 && laps.length === 0 ? (
-              <p className="py-4 text-center text-sm text-gray-600" />
-            ) : (
-              <ul>
-                {elapsedTime > 0 ? (
-                  <li className="flex justify-between border-b py-3 text-sm">
-                    <span>Lap {laps.length + 1}</span>
-                    <span className="tabular-nums">
-                      {formatTime(currentLapTime)}
-                    </span>
-                  </li>
-                ) : null}
-
-                {laps.map((lap, index) => (
-                  <li
-                    key={`${lap}-${index}`}
-                    className="flex justify-between border-b py-3 text-sm last:border-b-0"
-                  >
-                    <span>Lap {laps.length - index}</span>
-                    <span className="tabular-nums">{formatTime(lap)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="w-full max-w-sm lg:absolute lg:left-full lg:top-0 lg:ml-10 lg:w-20">
+          <section className="absolute left-full top-0 ml-10 w-20">
             <div className="grid justify-items-center gap-4">
               <label className="grid h-20 w-20 place-items-center border border-gray-950 bg-white/85 p-2 shadow-md">
                 <span className="sr-only">Category</span>
@@ -226,7 +228,7 @@ export default function TimerPage() {
               </button>
 
               {saveMessage ? (
-                <p className="w-40 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow lg:translate-x-10">
+                <p className="w-40 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
                   {saveMessage}
                 </p>
               ) : null}
@@ -234,7 +236,7 @@ export default function TimerPage() {
               {errorMessage ? (
                 <p
                   role="alert"
-                  className="w-40 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow lg:translate-x-10"
+                  className="w-40 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
                 >
                   {errorMessage}
                 </p>
