@@ -100,25 +100,14 @@ export default function EditCoffeeForm({
   );
 
   const imageUrl = useMemo(() => {
-    if (!coffeeBean?.image_url) {
-      return null;
-    }
-
-    if (/^https?:\/\//.test(coffeeBean.image_url)) {
-      return coffeeBean.image_url;
-    }
-
-    if (!API_BASE_URL) {
-      return coffeeBean.image_url;
-    }
-
+    if (!coffeeBean?.image_url) return null;
+    if (/^https?:\/\//.test(coffeeBean.image_url)) return coffeeBean.image_url;
+    if (!API_BASE_URL) return coffeeBean.image_url;
     return `${new URL(API_BASE_URL).origin}${coffeeBean.image_url}`;
   }, [coffeeBean]);
 
   useEffect(() => {
-    if (!API_BASE_URL) {
-      return;
-    }
+    if (!API_BASE_URL) return;
 
     const controller = new AbortController();
 
@@ -130,10 +119,7 @@ export default function EditCoffeeForm({
         });
 
         if (!res.ok) {
-          const message = await getErrorMessage(
-            res,
-            "Failed to load the coffee bean."
-          );
+          const message = await getErrorMessage(res, "Failed to load the coffee bean.");
           setErrorMessage(message);
           return;
         }
@@ -142,10 +128,7 @@ export default function EditCoffeeForm({
         setCoffeeBean(data);
         setForm(toForm(data));
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
+        if (error instanceof DOMException && error.name === "AbortError") return;
         setErrorMessage("Could not connect to the Rails API.");
       } finally {
         setIsLoading(false);
@@ -153,28 +136,16 @@ export default function EditCoffeeForm({
     }
 
     fetchCoffeeBean();
-
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [coffeeBeanId]);
 
-  function handleTextChange(
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) {
+  function handleTextChange(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = event.target;
-
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setForm((current) => ({ ...current, [name]: value }));
   }
 
   function handleLimitedChange(event: ChangeEvent<HTMLInputElement>) {
-    setForm((current) => ({
-      ...current,
-      is_limited: event.target.checked,
-    }));
+    setForm((current) => ({ ...current, is_limited: event.target.checked }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -191,19 +162,12 @@ export default function EditCoffeeForm({
     try {
       const res = await fetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          coffee_bean: toPayload(form),
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coffee_bean: toPayload(form) }),
       });
 
       if (!res.ok) {
-        const message = await getErrorMessage(
-          res,
-          "Failed to save the coffee bean."
-        );
+        const message = await getErrorMessage(res, "Failed to save the coffee bean.");
         setErrorMessage(message);
         return;
       }
@@ -226,9 +190,7 @@ export default function EditCoffeeForm({
           >
             Back to coffee records
           </Link>
-          <h1 className="mt-4 text-3xl font-semibold">
-            Confirm extraction result
-          </h1>
+          <h1 className="mt-4 text-3xl font-semibold">Confirm extraction result</h1>
           <p className="mt-2 text-sm leading-6 text-gray-600">
             Review the extracted package fields, correct them, and save.
           </p>
@@ -241,19 +203,13 @@ export default function EditCoffeeForm({
         ) : null}
 
         {!isLoading && errorMessage ? (
-          <div
-            role="alert"
-            className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-          >
+          <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {errorMessage}
           </div>
         ) : null}
 
         {!isLoading && coffeeBean ? (
-          <form
-            onSubmit={handleSubmit}
-            className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr]"
-          >
+          <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr]">
             <section className="rounded-md border border-stone-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-semibold">Uploaded image</h2>
               {imageUrl ? (
@@ -275,9 +231,7 @@ export default function EditCoffeeForm({
               <div className="mt-5 grid gap-4">
                 {textFields.map((field) => (
                   <label key={field.name} className="grid gap-1.5">
-                    <span className="text-sm font-medium text-gray-800">
-                      {field.label}
-                    </span>
+                    <span className="text-sm font-medium text-gray-800">{field.label}</span>
                     {field.type === "textarea" ? (
                       <textarea
                         name={field.name}
@@ -312,9 +266,7 @@ export default function EditCoffeeForm({
                     disabled={isSaving}
                     className="h-4 w-4 accent-amber-800 disabled:cursor-not-allowed"
                   />
-                  <span className="text-sm font-medium text-gray-800">
-                    Limited coffee
-                  </span>
+                  <span className="text-sm font-medium text-gray-800">Limited coffee</span>
                 </label>
               </div>
 
@@ -370,10 +322,7 @@ function toPayload(form: CoffeeBeanForm) {
     country: nullableString(form.country),
     name_ja: nullableString(form.name_ja),
     description_ja: nullableString(form.description_ja),
-    flavor_notes: form.flavor_notes
-      .split(/[\n,]/)
-      .map((note) => note.trim())
-      .filter(Boolean),
+    flavor_notes: form.flavor_notes.split(/[\n,]/).map((n) => n.trim()).filter(Boolean),
     region: nullableString(form.region),
     process: nullableString(form.process),
     variety: nullableString(form.variety),
@@ -389,23 +338,13 @@ function nullableString(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-async function getErrorMessage(
-  res: Response,
-  fallbackMessage: string
-): Promise<string> {
+async function getErrorMessage(res: Response, fallbackMessage: string): Promise<string> {
   try {
     const data = await res.json();
-
-    if (Array.isArray(data.errors) && data.errors.length > 0) {
-      return data.errors.join("\n");
-    }
-
-    if (typeof data.error === "string") {
-      return data.error;
-    }
+    if (Array.isArray(data.errors) && data.errors.length > 0) return data.errors.join("\n");
+    if (typeof data.error === "string") return data.error;
   } catch {
     return fallbackMessage;
   }
-
   return fallbackMessage;
 }

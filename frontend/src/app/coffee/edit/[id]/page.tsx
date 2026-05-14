@@ -1,4 +1,4 @@
-import EditCoffeeForm from "./EditCoffeeForm";
+import EditCoffeeForm from "../../[id]/EditCoffeeForm";
 
 export function generateStaticParams() {
   return [];
