@@ -24,6 +24,8 @@ services:
         value: https://yuzz87.github.io
       - key: TARGET_TIMEOUT
         value: "120"
+      - key: TESSERACT_TIMEOUT
+        value: "60"
 
 databases:
   - name: daily-app-db
