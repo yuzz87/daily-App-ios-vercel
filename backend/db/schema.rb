@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_14_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "active_timers", force: :cascade do |t|
+    t.string "category", default: "Programming", null: false
+    t.datetime "created_at", null: false
+    t.integer "elapsed_seconds", default: 0, null: false
+    t.boolean "is_running", default: false, null: false
+    t.jsonb "laps", default: [], null: false
+    t.datetime "started_at"
+    t.datetime "updated_at", null: false
+  end
 
   create_table "coffee_beans", force: :cascade do |t|
     t.string "brand"
@@ -89,6 +99,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_000100) do
     t.decimal "water_grams", precision: 7, scale: 2
     t.integer "water_temp"
     t.index ["coffee_bean_id"], name: "index_tasting_notes_on_coffee_bean_id"
+  end
+
+  create_table "voice_memos", force: :cascade do |t|
+    t.string "audio_url", null: false
+    t.string "client_uuid", null: false
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.text "memo"
+    t.string "mime_type", null: false
+    t.jsonb "tags", default: [], null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_uuid"], name: "index_voice_memos_on_client_uuid", unique: true
+    t.index ["tags"], name: "index_voice_memos_on_tags", using: :gin
+    t.index ["updated_at"], name: "index_voice_memos_on_updated_at"
   end
 
   add_foreign_key "tasting_notes", "coffee_beans"
