@@ -23,7 +23,7 @@ services:
       - key: FRONTEND_URL
         value: https://yuzz87.github.io
       - key: TARGET_TIMEOUT
-        value: "120"
+        value: "300"
       - key: TESSERACT_TIMEOUT
         value: "60"
 

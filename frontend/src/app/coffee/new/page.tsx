@@ -60,6 +60,9 @@ export default function NewCoffeePage() {
     setIsAnalyzing(true);
     setErrorMessage(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 270000);
+
     try {
       const formData = new FormData();
       formData.append("image", selectedImage);
@@ -67,7 +70,9 @@ export default function NewCoffeePage() {
       const res = await apiFetch(`${API_BASE_URL}/coffee_beans/analyze`, {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const message = await getErrorMessage(res);
@@ -83,8 +88,13 @@ export default function NewCoffeePage() {
       }
 
       router.push(`/coffee/edit?id=${data.id}`);
-    } catch {
-      setErrorMessage("Rails API に接続できませんでした。");
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e instanceof Error && e.name === "AbortError") {
+        router.push("/coffee?processing=true");
+      } else {
+        setErrorMessage("Rails API に接続できませんでした。");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -168,7 +178,7 @@ export default function NewCoffeePage() {
               disabled={!selectedImage || isAnalyzing}
               className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
             >
-              {isAnalyzing ? "読み取り中..." : "AIで読み取る"}
+              {isAnalyzing ? "読み取り中...(最大4分)" : "AIで読み取る"}
             </button>
           </div>
         </form>
