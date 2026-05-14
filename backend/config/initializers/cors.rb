@@ -1,6 +1,18 @@
+frontend_origins = ENV.fetch("FRONTEND_URL", "http://localhost:3000")
+  .split(",")
+  .map(&:strip)
+
+allowed_origins = (
+  frontend_origins +
+  [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ]
+).uniq
+
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
    allow do
-     origins ENV.fetch("FRONTEND_URL", "http://localhost:3000")
+     origins(*allowed_origins)
 
      resource "*",
        headers: :any,
