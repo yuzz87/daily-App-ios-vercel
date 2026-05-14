@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { publicUrl } from "@/lib/publicPath";
 
 type CalendarHeaderProps = {
   currentYear: number;
@@ -45,7 +46,7 @@ export default function CalendarHeader({
               title="検索を閉じる"
               className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
             >
-              <Image src="/arrow-left.svg" alt="" width={30} height={30} />
+              <Image src={publicUrl("/arrow-left.svg")} alt="" width={30} height={30} />
             </button>
 
             {/* 検索入力欄 */}
@@ -72,7 +73,7 @@ export default function CalendarHeader({
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
               >
                 <Image
-                  src={isSidebarOpen ? "/package-open.svg" : "/menu.svg"}
+                  src={publicUrl(isSidebarOpen ? "/package-open.svg" : "/menu.svg")}
                   alt=""
                   width={30}
                   height={30}
@@ -103,7 +104,7 @@ export default function CalendarHeader({
                   className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
                 >
                   <Image
-                    src="/circle-chevron-left.svg"
+                    src={publicUrl("/circle-chevron-left.svg")}
                     alt=""
                     width={30}
                     height={30}
@@ -118,7 +119,7 @@ export default function CalendarHeader({
                   className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
                 >
                   <Image
-                    src="/circle-chevron-right.svg"
+                    src={publicUrl("/circle-chevron-right.svg")}
                     alt=""
                     width={30}
                     height={30}
@@ -136,7 +137,7 @@ export default function CalendarHeader({
                 title="検索"
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
               >
-                <Image src="/search.svg" alt="" width={30} height={30} />
+                <Image src={publicUrl("/search.svg")} alt="" width={30} height={30} />
               </button>
 
               <button
@@ -145,7 +146,7 @@ export default function CalendarHeader({
                 title="音声検索"
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
               >
-                <Image src="/mic.svg" alt="" width={30} height={30} />
+                <Image src={publicUrl("/mic.svg")} alt="" width={30} height={30} />
               </button>
 
               <button
@@ -155,7 +156,7 @@ export default function CalendarHeader({
                 title="作成"
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
               >
-                <Image src="/square-plus.svg" alt="" width={30} height={30} />
+                <Image src={publicUrl("/square-plus.svg")} alt="" width={30} height={30} />
               </button>
 
               <button
@@ -164,7 +165,7 @@ export default function CalendarHeader({
                 title="設定"
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
               >
-                <Image src="/settings.svg" alt="" width={30} height={30} />
+                <Image src={publicUrl("/settings.svg")} alt="" width={30} height={30} />
               </button>
             </div>
           </div>

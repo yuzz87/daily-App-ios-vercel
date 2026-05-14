@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { publicUrl } from "@/lib/publicPath";
 
 const footerLinks = [
   {
@@ -57,7 +58,7 @@ export default function Footer() {
               }`}
             >
               <Image
-                src={link.icon}
+                src={publicUrl(link.icon)}
                 alt=""
                 width={24}
                 height={24}
