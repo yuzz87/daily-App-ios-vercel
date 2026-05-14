@@ -16,6 +16,7 @@ type VoiceMemo = {
   audioUrl?: string;
   mimeType: string;
   durationMs: number | null;
+  transcript: string;
   createdAt: string;
   updatedAt: string;
   syncStatus: SyncStatus;
@@ -30,6 +31,7 @@ type ServerVoiceMemo = {
   audio_url: string;
   mime_type: string;
   duration_ms: number | null;
+  transcript: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -94,6 +96,7 @@ async function getLocalVoiceMemos(): Promise<VoiceMemo[]> {
       records.map((memo) => ({
         ...memo,
         tags: memo.tags ?? [],
+        transcript: memo.transcript ?? "",
         syncStatus: memo.syncStatus ?? (memo.serverId ? "synced" : "local"),
       })),
     );
@@ -244,6 +247,7 @@ function serverToVoiceMemo(serverMemo: ServerVoiceMemo): VoiceMemo {
     audioUrl: resolveAudioUrl(serverMemo.audio_url) ?? undefined,
     mimeType: serverMemo.mime_type,
     durationMs: serverMemo.duration_ms,
+    transcript: serverMemo.transcript ?? "",
     createdAt: serverMemo.created_at,
     updatedAt: serverMemo.updated_at,
     syncStatus: "synced",
@@ -272,6 +276,7 @@ async function createServerVoiceMemo(memo: VoiceMemo): Promise<VoiceMemo> {
   formData.append("tags", JSON.stringify(memo.tags));
   formData.append("mime_type", memo.mimeType);
   formData.append("duration_ms", String(memo.durationMs ?? ""));
+  formData.append("transcript", memo.transcript);
   formData.append("audio", memo.audio, downloadFileName(memo));
 
   const response = await apiFetch(apiUrl("/voice_memos"), {
@@ -425,6 +430,19 @@ function MemoDetail({ memo, onSave, onDelete }: MemoDetailProps) {
           </div>
         )}
 
+        <div>
+          <p className="text-sm font-medium text-gray-800">文字起こし</p>
+          {memo.transcript ? (
+            <div className="mt-2 rounded-md bg-gray-50 p-3 text-sm leading-6 text-gray-800 whitespace-pre-wrap border border-gray-200">
+              {memo.transcript}
+            </div>
+          ) : (
+            <p className="mt-2 text-xs leading-5 text-gray-500">
+              文字起こしなし（Chrome または Edge で録音すると自動生成されます）
+            </p>
+          )}
+        </div>
+
         <label className="block text-sm font-medium text-gray-800">
           タイトル
           <input
@@ -490,6 +508,8 @@ export default function TaskMemoPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const transcriptRef = useRef<string>("");
 
   const selectedMemo = useMemo(
     () => memos.find((memo) => memo.id === selectedId) ?? null,
@@ -565,6 +585,7 @@ export default function TaskMemoPage() {
         window.clearInterval(timerRef.current);
       }
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      recognitionRef.current?.stop();
     };
   }, []);
 
@@ -650,6 +671,8 @@ export default function TaskMemoPage() {
 
       recorder.onerror = () => {
         setErrorMessage("録音中にエラーが発生しました。");
+        recognitionRef.current?.stop();
+        recognitionRef.current = null;
         stopActiveStream();
         setRecordingState("idle");
       };
@@ -679,6 +702,7 @@ export default function TaskMemoPage() {
           audio,
           mimeType: recordedMimeType,
           durationMs,
+          transcript: transcriptRef.current,
           createdAt: now.toISOString(),
           updatedAt: now.toISOString(),
           syncStatus: API_BASE_URL ? "pending" : "local",
@@ -732,6 +756,30 @@ export default function TaskMemoPage() {
           setElapsedMs(new Date().getTime() - startedAtRef.current);
         }
       }, 250);
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const Recognizer = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (Recognizer) {
+          transcriptRef.current = "";
+          const recognition: SpeechRecognition = new Recognizer();
+          recognition.lang = "ja-JP";
+          recognition.continuous = true;
+          recognition.interimResults = false;
+          recognition.onresult = (event: SpeechRecognitionEvent) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              if (event.results[i].isFinal) {
+                transcriptRef.current += event.results[i][0].transcript;
+              }
+            }
+          };
+          recognition.onerror = () => {};
+          recognitionRef.current = recognition;
+          recognition.start();
+        }
+      } catch {
+        // SpeechRecognition is optional; silently ignore
+      }
     } catch (error) {
       setRecordingState("idle");
       stopActiveStream();
@@ -748,6 +796,8 @@ export default function TaskMemoPage() {
     if (!recorder || recorder.state === "inactive") return;
 
     setRecordingState("stopping");
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
     recorder.stop();
   }
 

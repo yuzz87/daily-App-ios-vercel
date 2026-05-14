@@ -70,12 +70,13 @@ class Api::VoiceMemosController < ApplicationController
       memo: params[:memo],
       tags: parse_tags(params[:tags]),
       mime_type: params[:mime_type],
-      duration_ms: params[:duration_ms]
+      duration_ms: params[:duration_ms],
+      transcript: params[:transcript]
     }
   end
 
   def voice_memo_update_params
-    params.require(:voice_memo).permit(:title, :memo, :duration_ms, tags: [])
+    params.require(:voice_memo).permit(:title, :memo, :duration_ms, :transcript, tags: [])
   end
 
   def parse_tags(value)
