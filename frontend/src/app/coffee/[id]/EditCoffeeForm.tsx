@@ -172,7 +172,7 @@ export default function EditCoffeeForm({
         return;
       }
 
-      router.push(`/coffee/${coffeeBeanId}`);
+      router.push(`/coffee/detail?id=${coffeeBeanId}`);
     } catch {
       setErrorMessage("Could not connect to the Rails API.");
     } finally {
@@ -272,7 +272,7 @@ export default function EditCoffeeForm({
 
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <Link
-                  href={`/coffee/${coffeeBeanId}`}
+                  href={`/coffee/detail?id=${coffeeBeanId}`}
                   className="inline-flex min-h-11 items-center justify-center rounded-md border border-stone-300 px-4 text-sm font-semibold text-gray-700 transition hover:bg-stone-50"
                 >
                   Cancel

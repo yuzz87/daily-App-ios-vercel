@@ -81,7 +81,7 @@ export default function NewCoffeePage() {
         return;
       }
 
-      router.push(`/coffee/edit/${data.id}`);
+      router.push(`/coffee/edit?id=${data.id}`);
     } catch {
       setErrorMessage("Rails API に接続できませんでした。");
     } finally {

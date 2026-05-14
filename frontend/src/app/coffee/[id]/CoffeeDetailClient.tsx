@@ -126,7 +126,7 @@ export default function CoffeeDetailClient({ id }: { id: string }) {
           {coffeeBean ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
               <Link
-                href={`/coffee/edit/${coffeeBean.id}`}
+                href={`/coffee/edit?id=${coffeeBean.id}`}
                 className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900"
               >
                 編集する

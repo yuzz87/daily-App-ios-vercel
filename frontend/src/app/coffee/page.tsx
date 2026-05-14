@@ -148,7 +148,7 @@ export default async function CoffeePage() {
               return (
                 <Link
                   key={coffeeBean.id}
-                  href={`/coffee/${coffeeBean.id}`}
+                  href={`/coffee/detail?id=${coffeeBean.id}`}
                   className="flex min-h-[26rem] flex-col overflow-hidden rounded-md border border-stone-200 bg-white shadow-sm transition hover:border-amber-700 hover:shadow-md"
                 >
                   {imageUrl ? (
