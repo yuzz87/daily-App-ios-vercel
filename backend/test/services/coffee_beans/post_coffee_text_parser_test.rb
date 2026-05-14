@@ -53,6 +53,23 @@ module CoffeeBeans
       assert_equal true, result[:is_limited]
     end
 
+    test "corrects common ocr mistakes in high value fields" do
+      result = PostCoffeeTextParser.call(
+        region_texts: {
+          code: "IND 0416",
+          brand: "P0st C0ffee",
+          roast_level: "L1GHT R0AST",
+          country: "IND0NESIA",
+          all: "P0st C0ffee IND 0416 L1GHT R0AST IND0NESIA"
+        }
+      )
+
+      assert_equal "PostCoffee", result[:brand]
+      assert_equal "IND-0416", result[:code]
+      assert_equal "LIGHTROAST", result[:roast_level]
+      assert_equal "INDONESIA", result[:country]
+    end
+
     test "returns nil values when fields are not found" do
       result = PostCoffeeTextParser.call(raw_text: "unrelated text")
 
