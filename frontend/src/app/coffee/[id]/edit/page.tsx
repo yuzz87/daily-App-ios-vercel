@@ -1,15 +1,14 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import EditCoffeeForm from "./EditCoffeeForm";
 
 export function generateStaticParams() {
   return [];
 }
 
-export default function EditCoffeePage() {
-  const params = useParams();
-  const id = params.id as string;
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
 
+export default async function EditCoffeePage({ params }: PageProps) {
+  const { id } = await params;
   return <EditCoffeeForm coffeeBeanId={id} />;
 }
