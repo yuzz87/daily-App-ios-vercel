@@ -27,6 +27,32 @@ module CoffeeBeans
       assert_equal "IND-0416", result[:code]
     end
 
+    test "extracts fields from post coffee layout regions" do
+      result = PostCoffeeTextParser.call(
+        region_texts: {
+          code: "IND-0416",
+          brand: "PostCoffee",
+          roast_level: "LIGHTROAST",
+          name: "Frinsa Estate Natural Lactic",
+          country: "INDONESIA",
+          flavors: "Blueberry / Kiwi / Raspberry / Hibiscus",
+          specs: "Region Gunung Cupu Process Natural Lactic Variety Borbor Elevation 1,300m - 1,500m Farmer Fikri Raihan Hakim Farm Weninggalih",
+          all: "IND-0416 PostCoffee LIGHTROAST Frinsa Estate Natural Lactic INDONESIA LIMITED"
+        }
+      )
+
+      assert_equal "PostCoffee", result[:brand]
+      assert_equal "IND-0416", result[:code]
+      assert_equal "LIGHTROAST", result[:roast_level]
+      assert_equal "Frinsa Estate Natural Lactic", result[:name]
+      assert_equal "INDONESIA", result[:country]
+      assert_equal ["Blueberry", "Kiwi", "Raspberry", "Hibiscus"], result[:flavor_notes]
+      assert_equal "Natural Lactic", result[:process]
+      assert_equal "Borbor", result[:variety]
+      assert_equal "Weninggalih", result[:farm]
+      assert_equal true, result[:is_limited]
+    end
+
     test "returns nil values when fields are not found" do
       result = PostCoffeeTextParser.call(raw_text: "unrelated text")
 

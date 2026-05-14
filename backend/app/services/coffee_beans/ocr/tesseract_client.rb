@@ -13,17 +13,25 @@ module CoffeeBeans
       class ExecutionFailed < Error; end
       class TimeoutError < Error; end
 
-      def self.call(image_path:)
-        new(image_path: image_path).call
+      def self.call(image_path:, lang: nil, options: [], output_format: nil)
+        new(
+          image_path: image_path,
+          lang: lang,
+          options: options,
+          output_format: output_format
+        ).call
       end
 
-      def initialize(image_path:)
+      def initialize(image_path:, lang: nil, options: [], output_format: nil)
         @image_path = image_path
+        @lang = lang
+        @options = Array(options)
+        @output_format = output_format
       end
 
       def call
         stdout, stderr, status = Timeout.timeout(timeout_seconds) do
-          Open3.capture3(command, image_path.to_s, "stdout", "-l", lang)
+          Open3.capture3(*command_args)
         end
 
         raise ExecutionFailed, error_message(stderr) unless status.success?
@@ -37,14 +45,21 @@ module CoffeeBeans
 
       private
 
-      attr_reader :image_path
+      attr_reader :image_path, :options, :output_format
 
       def command
         ENV["TESSERACT_PATH"] || DEFAULT_COMMAND
       end
 
       def lang
-        ENV["TESSERACT_LANG"] || DEFAULT_LANG
+        @lang || ENV["TESSERACT_LANG"] || DEFAULT_LANG
+      end
+
+      def command_args
+        args = [command, image_path.to_s, "stdout", "-l", lang]
+        args.concat(options)
+        args << output_format if output_format.present?
+        args
       end
 
       def timeout_seconds
