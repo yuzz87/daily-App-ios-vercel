@@ -1,16 +1,10 @@
 services:
   - type: web
     name: daily-app-api
-    env: ruby
+    env: docker
     region: singapore
     plan: free
     rootDir: backend
-    packages:
-      - tesseract-ocr
-      - tesseract-ocr-jpn
-      - libvips-dev
-    buildCommand: bundle install && bundle exec rails db:migrate && bundle exec rails db:seed
-    startCommand: bundle exec rails server -b 0.0.0.0 -p $PORT
     envVars:
       - key: RAILS_ENV
         value: production
