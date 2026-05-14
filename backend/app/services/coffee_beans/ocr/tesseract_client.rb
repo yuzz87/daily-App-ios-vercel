@@ -6,7 +6,7 @@ module CoffeeBeans
     class TesseractClient
       DEFAULT_COMMAND = "tesseract"
       DEFAULT_LANG = "eng+jpn"
-      DEFAULT_OPTIONS = ["--oem", "1", "--psm", "6"].freeze
+      DEFAULT_OPTIONS = ["--oem", "3", "--psm", "6"].freeze
       DEFAULT_TIMEOUT = 10
 
       class Error < StandardError; end

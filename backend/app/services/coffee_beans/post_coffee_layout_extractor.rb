@@ -20,10 +20,10 @@ module CoffeeBeans
     ].freeze
     MIN_REGION_OVERLAP = 0.15
 
-    OCR_OPTIONS = ["--oem", "1", "--psm", "6", "-c", "preserve_interword_spaces=1"].freeze
+    OCR_OPTIONS = ["--oem", "3", "--psm", "6", "-c", "preserve_interword_spaces=1"].freeze
     NAME_OCR_OPTIONS = [
-      ["--oem", "1", "--psm", "7", "-c", "preserve_interword_spaces=1"],
-      ["--oem", "1", "--psm", "11", "-c", "preserve_interword_spaces=1"]
+      ["--oem", "3", "--psm", "7", "-c", "preserve_interword_spaces=1"],
+      ["--oem", "3", "--psm", "11", "-c", "preserve_interword_spaces=1"]
     ].freeze
     NAME_VARIANTS = %i[normal high_contrast].freeze
 
