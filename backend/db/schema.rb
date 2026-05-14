@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_000300) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_15_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -124,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_000300) do
     t.string "mime_type", null: false
     t.jsonb "tags", default: [], null: false
     t.string "title", null: false
+    t.text "transcript"
     t.datetime "updated_at", null: false
     t.index ["client_uuid"], name: "index_voice_memos_on_client_uuid", unique: true
     t.index ["tags"], name: "index_voice_memos_on_tags", using: :gin

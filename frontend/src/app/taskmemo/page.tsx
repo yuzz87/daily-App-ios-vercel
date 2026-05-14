@@ -6,6 +6,24 @@ import { apiFetch } from "@/lib/auth";
 type RecordingState = "idle" | "recording" | "stopping";
 type SyncStatus = "local" | "pending" | "synced" | "error";
 
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+  onerror: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionResultEvent {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: { isFinal: boolean; [index: number]: { transcript: string } };
+  };
+}
+
 type VoiceMemo = {
   id: string;
   serverId?: number;
@@ -508,7 +526,7 @@ export default function TaskMemoPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const transcriptRef = useRef<string>("");
 
   const selectedMemo = useMemo(
@@ -762,11 +780,11 @@ export default function TaskMemoPage() {
         const Recognizer = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (Recognizer) {
           transcriptRef.current = "";
-          const recognition: SpeechRecognition = new Recognizer();
+          const recognition: SpeechRecognitionInstance = new Recognizer();
           recognition.lang = "ja-JP";
           recognition.continuous = true;
           recognition.interimResults = false;
-          recognition.onresult = (event: SpeechRecognitionEvent) => {
+          recognition.onresult = (event: SpeechRecognitionResultEvent) => {
             for (let i = event.resultIndex; i < event.results.length; i++) {
               if (event.results[i].isFinal) {
                 transcriptRef.current += event.results[i][0].transcript;
