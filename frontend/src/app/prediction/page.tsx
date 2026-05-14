@@ -1,6 +1,5 @@
 import WeeklyTimerChart, { type WeekBar } from "./WeeklyTimerChart"
 
-export const dynamic = "force-dynamic"
 
 type StudySession = {
   id: number
