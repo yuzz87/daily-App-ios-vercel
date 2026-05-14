@@ -1,11 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import DeleteCoffeeBeanButton from "./DeleteCoffeeBeanButton";
 import TastingNotesSection, {
   type TastingNote,
 } from "./TastingNotesSection";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return [];
+}
 
 type CoffeeBean = {
   id: number;
@@ -31,22 +37,6 @@ type CoffeeBean = {
   tasting_notes?: TastingNote[];
 };
 
-type CoffeeBeanResult =
-  | {
-      coffeeBean: CoffeeBean;
-      error: null;
-    }
-  | {
-      coffeeBean: null;
-      error: string;
-    };
-
-type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const detailFields: Array<{
@@ -65,59 +55,15 @@ const detailFields: Array<{
   { label: "Farm", value: "farm" },
 ];
 
-async function fetchCoffeeBean(id: string): Promise<CoffeeBeanResult> {
-  if (!API_BASE_URL) {
-    return {
-      coffeeBean: null,
-      error: "NEXT_PUBLIC_API_BASE_URL が設定されていません。",
-    };
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/coffee_beans/${id}`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      return {
-        coffeeBean: null,
-        error: "コーヒー豆の取得に失敗しました。",
-      };
-    }
-
-    return {
-      coffeeBean: (await res.json()) as CoffeeBean,
-      error: null,
-    };
-  } catch {
-    return {
-      coffeeBean: null,
-      error: "Rails API に接続できませんでした。",
-    };
-  }
-}
-
 function buildImageUrl(imageUrl: string | null): string | null {
-  if (!imageUrl) {
-    return null;
-  }
-
-  if (/^https?:\/\//.test(imageUrl)) {
-    return imageUrl;
-  }
-
-  if (!API_BASE_URL) {
-    return imageUrl;
-  }
-
+  if (!imageUrl) return null;
+  if (/^https?:\/\//.test(imageUrl)) return imageUrl;
+  if (!API_BASE_URL) return imageUrl;
   return `${new URL(API_BASE_URL).origin}${imageUrl}`;
 }
 
 function formatDate(value: string | null): string {
-  if (!value) {
-    return "-";
-  }
-
+  if (!value) return "-";
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "short",
@@ -126,20 +72,45 @@ function formatDate(value: string | null): string {
 }
 
 function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  if (typeof value === "boolean") {
-    return value ? "Yes" : "No";
-  }
-
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
   return String(value);
 }
 
-export default async function CoffeeDetailPage({ params }: PageProps) {
-  const { id } = await params;
-  const { coffeeBean, error } = await fetchCoffeeBean(id);
+export default function CoffeeDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [coffeeBean, setCoffeeBean] = useState<CoffeeBean | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!API_BASE_URL) {
+      setError("NEXT_PUBLIC_API_BASE_URL が設定されていません。");
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    fetch(`${API_BASE_URL}/coffee_beans/${id}`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("コーヒー豆の取得に失敗しました。");
+        return res.json() as Promise<CoffeeBean>;
+      })
+      .then((data) => setCoffeeBean(data))
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError(err.message ?? "Rails API に接続できませんでした。");
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [id]);
+
   const imageUrl = buildImageUrl(coffeeBean?.image_url ?? null);
   const tastingNotes = coffeeBean?.tasting_notes ?? [];
 
@@ -158,9 +129,7 @@ export default async function CoffeeDetailPage({ params }: PageProps) {
               {coffeeBean?.name || coffeeBean?.name_ja || "コーヒー豆詳細"}
             </h1>
             {coffeeBean?.name_ja ? (
-              <p className="mt-2 text-sm text-gray-600">
-                {coffeeBean.name_ja}
-              </p>
+              <p className="mt-2 text-sm text-gray-600">{coffeeBean.name_ja}</p>
             ) : null}
           </div>
 
@@ -177,13 +146,19 @@ export default async function CoffeeDetailPage({ params }: PageProps) {
           ) : null}
         </header>
 
-        {error ? (
+        {loading ? (
+          <section className="rounded-md border border-stone-200 bg-white p-6 text-sm text-gray-600">
+            読み込み中...
+          </section>
+        ) : null}
+
+        {!loading && error ? (
           <section className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </section>
         ) : null}
 
-        {coffeeBean ? (
+        {!loading && coffeeBean ? (
           <>
             <section className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr]">
               <div className="rounded-md border border-stone-200 bg-white p-5 shadow-sm">
@@ -226,8 +201,7 @@ export default async function CoffeeDetailPage({ params }: PageProps) {
                   </p>
                 ) : null}
 
-                {coffeeBean.flavor_notes &&
-                coffeeBean.flavor_notes.length > 0 ? (
+                {coffeeBean.flavor_notes && coffeeBean.flavor_notes.length > 0 ? (
                   <ul className="mt-5 flex flex-wrap gap-2">
                     {coffeeBean.flavor_notes.map((note) => (
                       <li
@@ -255,17 +229,13 @@ export default async function CoffeeDetailPage({ params }: PageProps) {
                     </div>
                   ))}
                   <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                    <dt className="text-xs font-medium text-gray-500">
-                      Created
-                    </dt>
+                    <dt className="text-xs font-medium text-gray-500">Created</dt>
                     <dd className="mt-1 font-medium text-gray-900">
                       {formatDate(coffeeBean.created_at)}
                     </dd>
                   </div>
                   <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                    <dt className="text-xs font-medium text-gray-500">
-                      Updated
-                    </dt>
+                    <dt className="text-xs font-medium text-gray-500">Updated</dt>
                     <dd className="mt-1 font-medium text-gray-900">
                       {formatDate(coffeeBean.updated_at)}
                     </dd>
