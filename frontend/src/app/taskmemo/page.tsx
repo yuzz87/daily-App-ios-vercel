@@ -366,16 +366,16 @@ function MemoDetail({ memo, onSave, onDelete }: MemoDetailProps) {
   useEffect(() => {
     if (memo.audio) {
       const url = URL.createObjectURL(memo.audio);
-      setLocalAudioUrl(url);
+      const timeoutId = window.setTimeout(() => setLocalAudioUrl(url), 0);
       return () => {
+        window.clearTimeout(timeoutId);
         URL.revokeObjectURL(url);
-        setLocalAudioUrl(null);
       };
     }
 
     if (!memo.audioUrl) {
-      setLocalAudioUrl(null);
-      return;
+      const timeoutId = window.setTimeout(() => setLocalAudioUrl(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     let objectUrl: string | null = null;
@@ -394,7 +394,6 @@ function MemoDetail({ memo, onSave, onDelete }: MemoDetailProps) {
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
-      setLocalAudioUrl(null);
     };
   }, [memo.audio, memo.audioUrl]);
 
