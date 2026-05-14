@@ -22,6 +22,8 @@ services:
         sync: false
       - key: FRONTEND_URL
         value: https://yuzz87.github.io
+      - key: TARGET_TIMEOUT
+        value: "120"
 
 databases:
   - name: daily-app-db
