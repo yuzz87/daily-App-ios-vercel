@@ -36,6 +36,8 @@ const footerLinks = [
 export default function Footer() {
   const pathname = usePathname();
 
+  if (pathname === "/login") return null;
+
   return (
     <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
       <nav
