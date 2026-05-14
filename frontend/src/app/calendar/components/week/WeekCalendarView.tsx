@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { CalendarEvent } from "../../types";
 import {
   createEventSegments,
@@ -8,6 +11,7 @@ import { formatDate } from "../../utils/date";
 import WeekCalendarColumn from "./WeekCalendarColumn";
 import WeekHeader from "./WeekHeader";
 import WeekTimeGrid from "./WeekTimeGrid";
+import { HOUR_HEIGHT } from "./timeGrid";
 
 type WeekCalendarViewProps = {
   selectedDate: string;
@@ -49,6 +53,11 @@ const TIME_LABELS = Array.from(
   (_, hour) => `${String(hour).padStart(2, "0")}:00`
 );
 
+function getNowMinutes(): number {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
 export default function WeekCalendarView({
   selectedDate,
   dayCount = 7,
@@ -59,6 +68,24 @@ export default function WeekCalendarView({
   onDateClick,
   onEventClick,
 }: WeekCalendarViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [nowMinutes, setNowMinutes] = useState(getNowMinutes);
+
+  // マウント時に現在時刻付近へスクロール
+  useEffect(() => {
+    if (scrollRef.current) {
+      const nowTop = (nowMinutes / 60) * HOUR_HEIGHT;
+      scrollRef.current.scrollTop = Math.max(0, nowTop - 200);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 1時間ごとに現在時刻を更新
+  useEffect(() => {
+    const id = setInterval(() => setNowMinutes(getNowMinutes()), 3_600_000);
+    return () => clearInterval(id);
+  }, []);
+
   const weekDays = getDisplayDays(selectedDate || todayString, dayCount);
   const weekEventSegments = createEventSegments(
     weekDays.map((weekDay) => weekDay.dateString),
@@ -81,8 +108,11 @@ export default function WeekCalendarView({
     eventMap.get(dateString)?.push(event);
   });
 
+  const todayInView = weekDays.some((d) => d.dateString === todayString);
+  const nowTop = (nowMinutes / 60) * HOUR_HEIGHT;
+
   return (
-    <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-white">
+    <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto rounded-lg border bg-white">
       <div
         className="grid"
         style={{
@@ -117,7 +147,7 @@ export default function WeekCalendarView({
           />
 
           <div
-            className="grid"
+            className="relative grid"
             style={{
               gridTemplateColumns: `repeat(${dayCount}, minmax(96px, 1fr))`,
             }}
@@ -130,6 +160,16 @@ export default function WeekCalendarView({
                 onEventClick={onEventClick}
               />
             ))}
+
+            {todayInView && (
+              <div
+                className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
+                style={{ top: nowTop }}
+              >
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+                <div className="h-px flex-1 bg-red-400" />
+              </div>
+            )}
           </div>
         </div>
       </div>
