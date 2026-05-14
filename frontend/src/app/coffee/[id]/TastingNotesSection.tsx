@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
+import { apiFetch } from "@/lib/auth";
 
 export type TastingNote = {
   id: number;
@@ -114,13 +115,10 @@ export default function TastingNotesSection({
     setErrorMessage(null);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/coffee_beans/${coffeeBeanId}/tasting_notes`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             tasting_note: toPayload(form),
           }),

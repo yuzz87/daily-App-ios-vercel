@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/auth";
 
 type CoffeeBean = {
   id: number;
@@ -18,51 +21,7 @@ type CoffeeBean = {
   created_at: string | null;
 };
 
-type CoffeeBeanListResult =
-  | {
-      coffeeBeans: CoffeeBean[];
-      error: null;
-    }
-  | {
-      coffeeBeans: [];
-      error: string;
-    };
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-async function fetchCoffeeBeans(): Promise<CoffeeBeanListResult> {
-  if (!API_BASE_URL) {
-    return {
-      coffeeBeans: [],
-      error: "NEXT_PUBLIC_API_BASE_URL が設定されていません。",
-    };
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/coffee_beans`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      return {
-        coffeeBeans: [],
-        error: "コーヒー豆の取得に失敗しました。",
-      };
-    }
-
-    const data = await res.json();
-
-    return {
-      coffeeBeans: Array.isArray(data) ? data : [],
-      error: null,
-    };
-  } catch {
-    return {
-      coffeeBeans: [],
-      error: "Rails API に接続できませんでした。",
-    };
-  }
-}
 
 function buildImageUrl(imageUrl: string | null): string | null {
   if (!imageUrl) {
@@ -96,8 +55,32 @@ function getDisplayName(coffeeBean: CoffeeBean): string {
   return coffeeBean.name || coffeeBean.name_ja || "名称未設定";
 }
 
-export default async function CoffeePage() {
-  const { coffeeBeans, error } = await fetchCoffeeBeans();
+export default function CoffeePage() {
+  const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!API_BASE_URL) {
+      setError("NEXT_PUBLIC_API_BASE_URL が設定されていません。");
+      setLoading(false);
+      return;
+    }
+
+    apiFetch(`${API_BASE_URL}/coffee_beans`)
+      .then((res) => {
+        if (!res.ok) {
+          setError("コーヒー豆の取得に失敗しました。");
+          return null;
+        }
+        return res.json() as Promise<CoffeeBean[]>;
+      })
+      .then((data) => {
+        if (data) setCoffeeBeans(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setError("Rails API に接続できませんでした。"))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <main className="h-full overflow-y-auto bg-stone-50 px-4 py-6 text-gray-900 sm:px-6 lg:px-8">
@@ -115,13 +98,19 @@ export default async function CoffeePage() {
           </Link>
         </header>
 
-        {error ? (
+        {loading ? (
+          <section className="rounded-md border border-stone-200 bg-white p-6 text-sm text-gray-600">
+            読み込み中...
+          </section>
+        ) : null}
+
+        {!loading && error ? (
           <section className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </section>
         ) : null}
 
-        {!error && coffeeBeans.length === 0 ? (
+        {!loading && !error && coffeeBeans.length === 0 ? (
           <section className="rounded-md border border-dashed border-stone-300 bg-white p-8 text-center">
             <h2 className="text-lg font-semibold">登録済みの豆はありません</h2>
             <p className="mt-2 text-sm text-gray-600">

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/auth";
 import DeleteCoffeeBeanButton from "./DeleteCoffeeBeanButton";
 import TastingNotesSection, {
   type TastingNote,
@@ -83,7 +84,7 @@ export default function CoffeeDetailClient({ id }: { id: string }) {
 
     const controller = new AbortController();
 
-    fetch(`${API_BASE_URL}/coffee_beans/${id}`, {
+    apiFetch(`${API_BASE_URL}/coffee_beans/${id}`, {
       signal: controller.signal,
       cache: "no-store",
     })

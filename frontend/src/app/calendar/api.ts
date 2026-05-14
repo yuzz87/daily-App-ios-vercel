@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/auth";
 import type { CalendarEvent, Holiday } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -45,7 +46,7 @@ export async function fetchHolidays(
   year: number,
   month: number
 ): Promise<Holiday[]> {
-  const res = await fetch(
+  const res = await apiFetch(
     `${API_BASE_URL}/holidays?year=${year}&month=${month}`
   );
 
@@ -60,7 +61,7 @@ export async function fetchEvents(
   year: number,
   month: number
 ): Promise<CalendarEvent[]> {
-  const res = await fetch(`${API_BASE_URL}/events?year=${year}&month=${month}`);
+  const res = await apiFetch(`${API_BASE_URL}/events?year=${year}&month=${month}`);
 
   if (!res.ok) {
     await handleApiError(res, "予定の取得に失敗しました");
@@ -72,11 +73,8 @@ export async function fetchEvents(
 export async function createCalendarEvent(
   payload: EventPayload
 ): Promise<CalendarEvent> {
-  const res = await fetch(`${API_BASE_URL}/events`, {
+  const res = await apiFetch(`${API_BASE_URL}/events`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({
       event: payload,
     }),
@@ -93,11 +91,8 @@ export async function updateCalendarEvent(
   id: number,
   payload: EventPayload
 ): Promise<CalendarEvent> {
-  const res = await fetch(`${API_BASE_URL}/events/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/events/${id}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({
       event: payload,
     }),
@@ -111,7 +106,7 @@ export async function updateCalendarEvent(
 }
 
 export async function deleteCalendarEvent(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/events/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/events/${id}`, {
     method: "DELETE",
   });
 

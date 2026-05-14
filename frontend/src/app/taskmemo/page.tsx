@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch } from "@/lib/auth";
 
 type RecordingState = "idle" | "recording" | "stopping";
 type SyncStatus = "local" | "pending" | "synced" | "error";
@@ -250,7 +251,7 @@ function serverToVoiceMemo(serverMemo: ServerVoiceMemo): VoiceMemo {
 }
 
 async function fetchServerVoiceMemos(): Promise<VoiceMemo[]> {
-  const response = await fetch(apiUrl("/voice_memos"), { cache: "no-store" });
+  const response = await apiFetch(apiUrl("/voice_memos"), { cache: "no-store" });
   if (!response.ok) {
     throw new Error("同期済みメモを取得できませんでした。");
   }
@@ -273,7 +274,7 @@ async function createServerVoiceMemo(memo: VoiceMemo): Promise<VoiceMemo> {
   formData.append("duration_ms", String(memo.durationMs ?? ""));
   formData.append("audio", memo.audio, downloadFileName(memo));
 
-  const response = await fetch(apiUrl("/voice_memos"), {
+  const response = await apiFetch(apiUrl("/voice_memos"), {
     method: "POST",
     body: formData,
   });
@@ -293,9 +294,8 @@ async function updateServerVoiceMemo(memo: VoiceMemo): Promise<VoiceMemo> {
     return createServerVoiceMemo(memo);
   }
 
-  const response = await fetch(apiUrl(`/voice_memos/${memo.serverId}`), {
+  const response = await apiFetch(apiUrl(`/voice_memos/${memo.serverId}`), {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       voice_memo: {
         title: memo.title,
@@ -319,7 +319,7 @@ async function updateServerVoiceMemo(memo: VoiceMemo): Promise<VoiceMemo> {
 async function deleteServerVoiceMemo(memo: VoiceMemo): Promise<void> {
   if (!memo.serverId) return;
 
-  const response = await fetch(apiUrl(`/voice_memos/${memo.serverId}`), {
+  const response = await apiFetch(apiUrl(`/voice_memos/${memo.serverId}`), {
     method: "DELETE",
   });
 

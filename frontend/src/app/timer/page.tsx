@@ -3,6 +3,7 @@
 import { ChangeEvent, useMemo, useState } from "react"
 import { useStopwatch } from "../components/StopwatchProvider"
 import ThreeBox from "./components/three/ThreeBox"
+import { apiFetch } from "@/lib/auth"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -95,11 +96,8 @@ export default function TimerPage() {
     setSaveMessage(null)
 
     try {
-      const res = await fetch(`${API_BASE_URL}/study_sessions`, {
+      const res = await apiFetch(`${API_BASE_URL}/study_sessions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           study_session: {
             category: trimmedCategory,

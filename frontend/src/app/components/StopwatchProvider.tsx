@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react"
+import { apiFetch } from "@/lib/auth"
 
 type StopwatchSnapshot = {
   category: string
@@ -116,11 +117,8 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     const nextStartedAt = nextIsRunning ? new Date().toISOString() : null
 
     try {
-      await fetch(`${API_BASE_URL}/active_timer`, {
+      await apiFetch(`${API_BASE_URL}/active_timer`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           active_timer: {
             category: nextCategory,
@@ -210,7 +208,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     if (!API_BASE_URL) return false
 
     try {
-      const res = await fetch(`${API_BASE_URL}/active_timer`, {
+      const res = await apiFetch(`${API_BASE_URL}/active_timer`, {
         cache: "no-store",
       })
 
@@ -382,7 +380,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
     if (!API_BASE_URL) return
 
     try {
-      await fetch(`${API_BASE_URL}/active_timer`, {
+      await apiFetch(`${API_BASE_URL}/active_timer`, {
         method: "DELETE",
       })
     } catch {

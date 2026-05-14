@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/auth";
 
 type CoffeeBean = {
   id: number;
@@ -113,7 +114,7 @@ export default function EditCoffeeForm({
 
     async function fetchCoffeeBean() {
       try {
-        const res = await fetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
+        const res = await apiFetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
           signal: controller.signal,
           cache: "no-store",
         });
@@ -160,9 +161,8 @@ export default function EditCoffeeForm({
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
+      const res = await apiFetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ coffee_bean: toPayload(form) }),
       });
 

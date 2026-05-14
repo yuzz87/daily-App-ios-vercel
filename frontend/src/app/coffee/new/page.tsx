@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { apiFetch } from "@/lib/auth";
 
 type AnalyzeResponse = {
   id?: number;
@@ -63,7 +64,7 @@ export default function NewCoffeePage() {
       const formData = new FormData();
       formData.append("image", selectedImage);
 
-      const res = await fetch(`${API_BASE_URL}/coffee_beans/analyze`, {
+      const res = await apiFetch(`${API_BASE_URL}/coffee_beans/analyze`, {
         method: "POST",
         body: formData,
       });

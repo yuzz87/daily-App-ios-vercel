@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apiFetch } from "@/lib/auth";
 
 type DeleteCoffeeBeanButtonProps = {
   coffeeBeanId: number;
@@ -34,7 +35,7 @@ export default function DeleteCoffeeBeanButton({
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
+      const res = await apiFetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
         method: "DELETE",
       });
 
