@@ -176,10 +176,14 @@ function sortVoiceMemos(records: VoiceMemo[]): VoiceMemo[] {
 
 function mergeVoiceMemos(local: VoiceMemo[], remote: VoiceMemo[]): VoiceMemo[] {
   const byId = new Map<string, VoiceMemo>();
-  local.forEach((memo) => byId.set(memo.id, memo));
+
+  // 未同期のメモだけ残す（syncedでサーバーにないものは別デバイスで削除済み）
+  local
+    .filter((memo) => memo.syncStatus !== "synced")
+    .forEach((memo) => byId.set(memo.id, memo));
 
   remote.forEach((serverMemo) => {
-    const localMemo = byId.get(serverMemo.id);
+    const localMemo = local.find((m) => m.id === serverMemo.id);
     byId.set(serverMemo.id, {
       ...serverMemo,
       audio: localMemo?.audio,
@@ -655,7 +659,12 @@ export default function TaskMemoPage() {
         remoteRecords,
       );
 
-      await Promise.all(merged.map((memo) => putLocalVoiceMemo(memo)));
+      const mergedIds = new Set(merged.map((m) => m.id));
+      const removedLocally = sourceRecords.filter((m) => !mergedIds.has(m.id));
+      await Promise.all([
+        ...removedLocally.map((m) => removeLocalVoiceMemo(m.id)),
+        ...merged.map((m) => putLocalVoiceMemo(m)),
+      ]);
       setMemos(merged);
       setSelectedId((current) => current ?? merged[0]?.id ?? null);
       setLastSyncedAt(new Date().toISOString());
