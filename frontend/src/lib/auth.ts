@@ -1,3 +1,5 @@
+import { BASE_PATH } from "@/lib/publicPath";
+
 const TOKEN_KEY = "auth_token";
 
 export function getToken(): string | null {
@@ -39,8 +41,8 @@ export async function apiFetch(
 
   if (res.status === 401) {
     removeToken();
-    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-      window.location.href = "/login";
+    if (typeof window !== "undefined" && window.location.pathname !== `${BASE_PATH}/login`) {
+      window.location.href = `${BASE_PATH}/login`;
     }
     return res;
   }
