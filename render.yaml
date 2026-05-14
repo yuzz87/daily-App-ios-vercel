@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: daily-app-api
+    env: ruby
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: bundle install && bundle exec rails db:migrate
+    startCommand: bundle exec rails server -b 0.0.0.0 -p $PORT
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: daily-app-db
+          property: connectionString
+      - key: DEVISE_JWT_SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_EMAILS
+        sync: false
+      - key: FRONTEND_URL
+        value: https://yuzz87.github.io
+
+databases:
+  - name: daily-app-db
+    databaseName: daily_app_production
+    plan: free
+    region: singapore

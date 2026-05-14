@@ -1,4 +1,12 @@
 Rails.application.routes.draw do
+  devise_for :users,
+    path: "api/auth",
+    path_names: { sign_in: "sign_in", sign_out: "sign_out", registration: "sign_up" },
+    controllers: {
+      sessions: "api/auth/sessions",
+      registrations: "api/auth/registrations"
+    }
+
   namespace :api do
     resources :holidays, only: [:index]
     resources :events
@@ -16,5 +24,4 @@ Rails.application.routes.draw do
   end
 
   get "up" => "rails/health#show", as: :rails_health_check
-
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_14_000300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,6 +70,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_000100) do
     t.index ["date"], name: "index_holidays_on_date", unique: true
   end
 
+  create_table "jwt_denylist", force: :cascade do |t|
+    t.datetime "exp", null: false
+    t.string "jti", null: false
+    t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
+  end
+
   create_table "study_sessions", force: :cascade do |t|
     t.string "category", null: false
     t.datetime "created_at", null: false
@@ -99,6 +105,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_000100) do
     t.decimal "water_grams", precision: 7, scale: 2
     t.integer "water_temp"
     t.index ["coffee_bean_id"], name: "index_tasting_notes_on_coffee_bean_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
   end
 
   create_table "voice_memos", force: :cascade do |t|
