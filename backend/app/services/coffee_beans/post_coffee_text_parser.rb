@@ -35,6 +35,34 @@ module CoffeeBeans
       "MEDIUMROAST" => /\b(?:MEDIUM|MED1UM)\s*(?:ROAST|R0AST|RO4ST)\b/,
       "DARKROAST" => /\b(?:DARK|D4RK)\s*(?:ROAST|R0AST|RO4ST)\b/
     }.freeze
+    FLAVOR_NOTE_ALIASES = {
+      "Blueberry" => /\b(?:BLUEBERRY|BLUEBERR[YV]|8LUEBERRY)\b/,
+      "Kiwi" => /\bKIWI\b/,
+      "Raspberry" => /\b(?:RASPBERRY|RASPBERR[YV])\b/,
+      "Hibiscus" => /\b(?:HIBISCUS|HIB1SCUS)\b/,
+      "Strawberry" => /\b(?:STRAWBERRY|STRAWBERR[YV])\b/,
+      "Cherry" => /\bCHERRY\b/,
+      "Apple" => /\bAPPLE\b/,
+      "Orange" => /\bORANGE\b/,
+      "Lemon" => /\bLEMON\b/,
+      "Grape" => /\bGRAPE\b/,
+      "Peach" => /\bPEACH\b/,
+      "Floral" => /\bFLORAL\b/,
+      "Chocolate" => /\b(?:CHOCOLATE|CH0COLATE)\b/,
+      "Caramel" => /\bCARAMEL\b/,
+      "Honey" => /\bHONEY\b/,
+      "Tea" => /\bTEA\b/,
+      "Citrus" => /\bCITRUS\b/,
+      "Winey" => /\bWINEY\b/
+    }.freeze
+    SPEC_LABEL_ALIASES = {
+      "Region" => /\b(?:REGION|REG10N|REGI0N|REGlON)\b/i,
+      "Process" => /\b(?:PROCESS|PR0CESS|PR0CE55)\b/i,
+      "Variety" => /\b(?:VARIETY|VAR1ETY|VARIETV)\b/i,
+      "Elevation" => /\b(?:ELEVATION|ELEVATI0N|ELEVATlON)\b/i,
+      "Farmer" => /\b(?:FARMER|FARNER)\b/i,
+      "Farm" => /\bFARM\b/i
+    }.freeze
 
     def self.call(region_texts: nil, raw_text: nil)
       new(region_texts: region_texts, raw_text: raw_text).call
@@ -53,8 +81,8 @@ module CoffeeBeans
         roast_level: roast_level,
         name: name,
         country: country,
-        name_ja: nil,
-        description_ja: nil,
+        name_ja: name_ja,
+        description_ja: description_ja,
         flavor_notes: flavor_notes,
         region: spec_value("Region"),
         process: spec_value("Process"),
@@ -133,11 +161,25 @@ module CoffeeBeans
     end
 
     def flavor_notes
+      notes = split_flavor_notes
+      alias_notes = FLAVOR_NOTE_ALIASES.filter_map do |canonical, pattern|
+        canonical if text_for(:flavors).upcase.match?(pattern)
+      end
+
+      (notes + alias_notes).uniq
+    end
+
+    def split_flavor_notes
       text_for(:flavors)
         .split(/[,\/|・\n]+/)
         .map(&:squish)
+        .flat_map { |note| note.split(/\s{2,}/) }
+        .map { |note| note.gsub(/\A(?:Flavor|Flavors|Notes?)\s*[:\-]?\s*/i, "") }
+        .reject { |note| note.match?(/\d/) }
+        .map { |note| note.gsub(/[^A-Za-z ]/, "").squish }
         .select { |note| note.match?(/[A-Za-z]/) }
         .reject { |note| note.length < 3 }
+        .reject { |note| spec_label?(note) }
         .uniq
     end
 
@@ -147,9 +189,20 @@ module CoffeeBeans
       nil
     end
 
+    def name_ja
+      japanese_description_lines.first
+    end
+
+    def description_ja
+      lines = japanese_description_lines.drop(1)
+      return nil if lines.empty?
+
+      lines.join("\n")
+    end
+
     def spec_value(label)
       labels = "Region|Process|Variety|Elevation|Farmer|Farm"
-      match = text_for(:specs).match(/(?<![A-Za-z])#{Regexp.escape(label)}(?![A-Za-z])\s*[:\-]?\s*([^|\n]+?)(?=\s+(?:#{labels})\b|$)/i)
+      match = normalized_specs_text.match(/(?<![A-Za-z])#{Regexp.escape(label)}(?![A-Za-z])\s*[:\-]?\s*([^|\n]+?)(?=\s+(?:#{labels})\b|$)/i)
       match&.[](1)&.squish
     end
 
@@ -178,6 +231,25 @@ module CoffeeBeans
       return unless match
 
       "#{match[1]}-#{match[2]}"
+    end
+
+    def normalized_specs_text
+      SPEC_LABEL_ALIASES.reduce(text_for(:specs)) do |text, (canonical, pattern)|
+        text.gsub(pattern, canonical)
+      end.squish
+    end
+
+    def spec_label?(text)
+      SPEC_LABEL_ALIASES.keys.any? { |label| text.casecmp?(label) }
+    end
+
+    def japanese_description_lines
+      @japanese_description_lines ||= text_for(:description_ja)
+        .to_s
+        .lines
+        .map(&:squish)
+        .select { |line| line.match?(/[ぁ-んァ-ヶ一-龠々ー]/) }
+        .reject { |line| line.match?(/\A[\p{Punct}\s]+\z/) }
     end
   end
 end

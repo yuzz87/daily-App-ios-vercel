@@ -70,6 +70,36 @@ module CoffeeBeans
       assert_equal "INDONESIA", result[:country]
     end
 
+    test "corrects flavor note and spec label ocr mistakes" do
+      result = PostCoffeeTextParser.call(
+        region_texts: {
+          flavors: "Flavors: 8lueberry / HIB1SCUS / CH0COLATE",
+          specs: "REG10N Gunung Cupu PR0CESS Natural Lactic VAR1ETY Borbor ELEVATI0N 1,300m - 1,500m FARNER Fikri Raihan Hakim FARM Weninggalih",
+          all: "PostCoffee"
+        }
+      )
+
+      assert_equal ["Blueberry", "Hibiscus", "Chocolate"], result[:flavor_notes]
+      assert_equal "Gunung Cupu", result[:region]
+      assert_equal "Natural Lactic", result[:process]
+      assert_equal "Borbor", result[:variety]
+      assert_equal "1,300m - 1,500m", result[:elevation]
+      assert_equal "Fikri Raihan Hakim", result[:farmer]
+      assert_equal "Weninggalih", result[:farm]
+    end
+
+    test "extracts japanese name and description from japanese description region" do
+      result = PostCoffeeTextParser.call(
+        region_texts: {
+          description_ja: "インドネシア フリンサエステート ナチュラルラクティック\nブルーベリーヨーグルトのような乳酸感のある酸味とベリーの甘さ。",
+          all: "PostCoffee"
+        }
+      )
+
+      assert_equal "インドネシア フリンサエステート ナチュラルラクティック", result[:name_ja]
+      assert_equal "ブルーベリーヨーグルトのような乳酸感のある酸味とベリーの甘さ。", result[:description_ja]
+    end
+
     test "returns nil values when fields are not found" do
       result = PostCoffeeTextParser.call(raw_text: "unrelated text")
 
