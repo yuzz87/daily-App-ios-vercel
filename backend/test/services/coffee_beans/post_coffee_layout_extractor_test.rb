@@ -21,6 +21,18 @@ module CoffeeBeans
       end
     end
 
+    test "falls back when tesseract tsv contains unescaped quote text" do
+      with_stubbed_singleton(Ocr::TesseractClient, :call, ->(**kwargs) {
+        kwargs[:lang] == "jpn+eng" ? sample_japanese_tsv : malformed_quote_tsv
+      }) do
+        result = PostCoffeeLayoutExtractor.call(image_path: "package.png")
+
+        assert_includes result[:region_texts][:all], "SPR-001"
+        assert_includes result[:region_texts][:all], 'Natural "Special'
+        assert_includes result[:raw_text], "[all]"
+      end
+    end
+
     private
 
     def sample_tsv
@@ -49,6 +61,17 @@ module CoffeeBeans
         %w[1 1 0 0 0 0 0 0 1000 1000 -1],
         %w[5 1 1 1 1 1 80 470 220 34 82 インドネシア],
         %w[5 1 1 1 2 1 80 530 260 34 80 ブルーベリーの甘さ。]
+      ]
+
+      rows.map { |row| row.join("\t") }.join("\n")
+    end
+
+    def malformed_quote_tsv
+      rows = [
+        %w[level page_num block_num par_num line_num word_num left top width height conf text],
+        %w[1 1 0 0 0 0 0 0 1000 1000 -1],
+        %w[5 1 1 1 1 1 40 40 120 35 92 SPR-001],
+        ["5", "1", "2", "1", "1", "1", "220", "170", "100", "35", "91", 'Natural "Special']
       ]
 
       rows.map { |row| row.join("\t") }.join("\n")

@@ -1,4 +1,6 @@
 require "csv"
+require "fileutils"
+require "securerandom"
 
 module CoffeeBeans
   class PostCoffeeLayoutExtractor
@@ -6,15 +8,24 @@ module CoffeeBeans
       code: [0.00, 0.00, 0.32, 0.17],
       brand: [0.25, 0.00, 0.75, 0.17],
       roast_level: [0.60, 0.00, 1.00, 0.19],
-      name: [0.05, 0.13, 0.95, 0.31],
+      name: [0.03, 0.10, 0.97, 0.35],
       country: [0.04, 0.27, 0.96, 0.48],
       description: [0.04, 0.44, 0.96, 0.62],
       flavors: [0.04, 0.58, 0.96, 0.74],
       specs: [0.04, 0.70, 0.96, 1.00]
     }.freeze
+    NAME_REGIONS = [
+      [0.02, 0.09, 0.98, 0.36],
+      [0.32, 0.35, 0.68, 0.48]
+    ].freeze
     MIN_REGION_OVERLAP = 0.15
 
-    OCR_OPTIONS = ["--psm", "6"].freeze
+    OCR_OPTIONS = ["--oem", "1", "--psm", "6", "-c", "preserve_interword_spaces=1"].freeze
+    NAME_OCR_OPTIONS = [
+      ["--oem", "1", "--psm", "7", "-c", "preserve_interword_spaces=1"],
+      ["--oem", "1", "--psm", "11", "-c", "preserve_interword_spaces=1"]
+    ].freeze
+    NAME_VARIANTS = %i[normal high_contrast].freeze
 
     def self.call(image_path:)
       new(image_path: image_path).call
@@ -37,6 +48,7 @@ module CoffeeBeans
       end
 
       region_texts = group_words_by_region(words)
+      region_texts[:name] = best_name_text(region_texts[:name])
       region_texts = region_texts.merge(japanese_region_texts)
 
       {
@@ -84,8 +96,66 @@ module CoffeeBeans
       {}
     end
 
+    def best_name_text(layout_name)
+      candidates = ([layout_name] + dedicated_name_candidates).compact
+      candidates
+        .map { |candidate| clean_name_candidate(candidate) }
+        .reject(&:blank?)
+        .reject { |candidate| noisy_name_candidate?(candidate) }
+        .max_by { |candidate| name_candidate_score(candidate) }
+    end
+
+    def dedicated_name_candidates
+      return [] unless File.exist?(image_path.to_s)
+
+      NAME_REGIONS.flat_map do |region|
+        NAME_VARIANTS.flat_map do |variant|
+          cropped_path = write_name_crop(region: region, variant: variant)
+
+          NAME_OCR_OPTIONS.filter_map do |options|
+            Ocr::TesseractClient.call(
+              image_path: cropped_path,
+              lang: "eng",
+              options: options
+            ).presence
+          rescue Ocr::TesseractClient::Error => e
+            Rails.logger.warn("Tesseract name OCR failed: #{e.class}: #{e.message}")
+            nil
+          end
+        ensure
+          File.delete(cropped_path) if cropped_path && File.exist?(cropped_path)
+        end
+      end
+    rescue LoadError, StandardError => e
+      Rails.logger.warn("Coffee name crop OCR failed: #{e.class}: #{e.message}")
+      []
+    end
+
+    def write_name_crop(region:, variant:)
+      require "vips"
+
+      FileUtils.mkdir_p(name_crop_dir)
+
+      image = Vips::Image.new_from_file(image_path.to_s, access: :sequential)
+      image = image.autorot if image.respond_to?(:autorot)
+      min_x, min_y, max_x, max_y = region
+      left = (image.width * min_x).round
+      top = (image.height * min_y).round
+      width = [(image.width * (max_x - min_x)).round, 1].max
+      height = [(image.height * (max_y - min_y)).round, 1].max
+      crop = image.crop(left, top, [width, image.width - left].min, [height, image.height - top].min)
+      crop = crop.resize(1_600.0 / crop.width) if crop.width < 1_600
+      crop = crop.colourspace("b-w")
+      crop = crop.linear(1.35, -12) if variant == :high_contrast
+      crop = crop.cast("uchar")
+
+      path = name_crop_dir.join("name-#{SecureRandom.hex(8)}.png")
+      crop.write_to_file(path.to_s)
+      path.to_s
+    end
+
     def parse_words(tsv)
-      rows = CSV.parse(tsv.to_s, headers: true, col_sep: "\t")
+      rows = parse_tsv_rows(tsv)
       return [] unless rows.headers&.include?("level")
 
       page = rows.find { |row| row["level"].to_i == 1 }
@@ -121,6 +191,29 @@ module CoffeeBeans
           confidence: confidence
         }
       end
+    end
+
+    def parse_tsv_rows(tsv)
+      CSV.parse(tsv.to_s, headers: true, col_sep: "\t")
+    rescue CSV::MalformedCSVError => e
+      Rails.logger.warn("Tesseract TSV parse failed: #{e.class}: #{e.message}")
+
+      parse_tsv_rows_without_csv_quotes(tsv)
+    end
+
+    def parse_tsv_rows_without_csv_quotes(tsv)
+      lines = tsv.to_s.lines
+      headers = lines.first.to_s.chomp.split("\t")
+      return CSV::Table.new([]) if headers.empty?
+
+      rows = lines.drop(1).filter_map do |line|
+        values = line.chomp.split("\t", headers.length)
+        next unless values.length == headers.length
+
+        CSV::Row.new(headers, values)
+      end
+
+      CSV::Table.new(rows)
     end
 
     def group_words_by_region(words)
@@ -205,6 +298,48 @@ module CoffeeBeans
     def positive_integer(value)
       integer = value.to_i
       integer.positive? ? integer : nil
+    end
+
+    def name_crop_dir
+      Rails.root.join("tmp", "coffee_ocr")
+    end
+
+    def clean_name_candidate(candidate)
+      candidate
+        .to_s
+        .lines
+        .map(&:squish)
+        .reject(&:blank?)
+        .reject { |line| line.match?(/\b(?:Post\s*Coffee|LIGHT\s*ROAST|MEDIUM\s*ROAST|DARK\s*ROAST)\b/i) }
+        .reject { |line| line.match?(/\b[A-Z]{2,4}[-\s]?\d{3,5}\b/i) }
+        .max_by { |line| name_candidate_score(line) }
+        .to_s
+        .gsub(/[|_\[\]{}]/, " ")
+        .gsub(/\s+/, " ")
+        .squish
+    end
+
+    def noisy_name_candidate?(candidate)
+      return true if candidate.length < 4
+      return true if candidate.length > 80
+      return true if candidate.scan(/[A-Za-z]/).length < 3
+      return true if candidate.match?(/\b(?:Region|Process|Variety|Elevation|Farmer|Farm|Roast|Date)\b/i)
+      return true if candidate.match?(/\b(?:Coffee|Brewed|Books|Music|Movies|Memories|Beloved|Cup)\b/i)
+
+      words = candidate.scan(/[A-Za-z][A-Za-z'\-]*/)
+      return true if words.none? { |word| word.length >= 5 }
+      return true if words.length >= 3 && words.count { |word| word.length <= 2 } > words.length / 2.0
+
+      symbol_count = candidate.scan(/[^A-Za-z0-9\s'\-]/).length
+      symbol_count > candidate.length / 4.0
+    end
+
+    def name_candidate_score(candidate)
+      letters = candidate.scan(/[A-Za-z]/).length
+      words = candidate.scan(/[A-Za-z][A-Za-z'\-]*/).length
+      symbols = candidate.scan(/[^A-Za-z0-9\s'\-]/).length
+
+      letters + (words * 3) - (symbols * 5) - (candidate.length > 50 ? 20 : 0)
     end
   end
 end

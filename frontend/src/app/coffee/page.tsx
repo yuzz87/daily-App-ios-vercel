@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 type CoffeeBean = {
   id: number;
+  image_url: string | null;
   brand: string | null;
   code: string | null;
   roast_level: string | null;
@@ -63,6 +65,22 @@ async function fetchCoffeeBeans(): Promise<CoffeeBeanListResult> {
   }
 }
 
+function buildImageUrl(imageUrl: string | null): string | null {
+  if (!imageUrl) {
+    return null;
+  }
+
+  if (/^https?:\/\//.test(imageUrl)) {
+    return imageUrl;
+  }
+
+  if (!API_BASE_URL) {
+    return imageUrl;
+  }
+
+  return `${new URL(API_BASE_URL).origin}${imageUrl}`;
+}
+
 function formatDate(value: string | null): string {
   if (!value) {
     return "登録日未設定";
@@ -108,7 +126,7 @@ export default async function CoffeePage() {
           <section className="rounded-md border border-dashed border-stone-300 bg-white p-8 text-center">
             <h2 className="text-lg font-semibold">登録済みの豆はありません</h2>
             <p className="mt-2 text-sm text-gray-600">
-              画像アップロード画面の実装後、ここに保存済みのコーヒー豆が表示されます。
+              画像アップロードと確認画面で保存したコーヒー豆がここに表示されます。
             </p>
             <Link
               href="/coffee/new"
@@ -124,76 +142,99 @@ export default async function CoffeePage() {
             aria-label="コーヒー豆一覧"
             className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {coffeeBeans.map((coffeeBean) => (
-              <Link
-                key={coffeeBean.id}
-                href={`/coffee/${coffeeBean.id}`}
-                className="flex min-h-56 flex-col justify-between rounded-md border border-stone-200 bg-white p-5 shadow-sm transition hover:border-amber-700 hover:shadow-md"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3">
+            {coffeeBeans.map((coffeeBean) => {
+              const imageUrl = buildImageUrl(coffeeBean.image_url);
+
+              return (
+                <Link
+                  key={coffeeBean.id}
+                  href={`/coffee/${coffeeBean.id}`}
+                  className="flex min-h-[26rem] flex-col overflow-hidden rounded-md border border-stone-200 bg-white shadow-sm transition hover:border-amber-700 hover:shadow-md"
+                >
+                  {imageUrl ? (
+                    <div className="relative aspect-[4/3] w-full bg-stone-100">
+                      <Image
+                        src={imageUrl}
+                        alt={`${getDisplayName(coffeeBean)} のパッケージ画像`}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-contain p-3"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[4/3] w-full items-center justify-center bg-stone-100 px-4 text-center text-sm text-gray-500">
+                      画像なし
+                    </div>
+                  )}
+
+                  <div className="flex flex-1 flex-col justify-between p-5">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                        {coffeeBean.brand || "Brand unknown"}
-                      </p>
-                      <h2 className="mt-2 line-clamp-2 text-xl font-semibold">
-                        {getDisplayName(coffeeBean)}
-                      </h2>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                            {coffeeBean.brand || "Brand unknown"}
+                          </p>
+                          <h2 className="mt-2 line-clamp-2 text-xl font-semibold">
+                            {getDisplayName(coffeeBean)}
+                          </h2>
+                        </div>
+                        {coffeeBean.status ? (
+                          <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
+                            {coffeeBean.status}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <dl className="mt-4 grid gap-2 text-sm text-gray-600">
+                        <div className="flex justify-between gap-3">
+                          <dt>Code</dt>
+                          <dd className="text-right text-gray-900">
+                            {coffeeBean.code || "-"}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <dt>Country</dt>
+                          <dd className="text-right text-gray-900">
+                            {coffeeBean.country || "-"}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <dt>Roast</dt>
+                          <dd className="text-right text-gray-900">
+                            {coffeeBean.roast_level || "-"}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <dt>Process</dt>
+                          <dd className="text-right text-gray-900">
+                            {coffeeBean.process || "-"}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      {coffeeBean.flavor_notes &&
+                      coffeeBean.flavor_notes.length > 0 ? (
+                        <ul className="mt-4 flex flex-wrap gap-2">
+                          {coffeeBean.flavor_notes.slice(0, 4).map((note) => (
+                            <li
+                              key={note}
+                              className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900"
+                            >
+                              {note}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </div>
-                    {coffeeBean.status ? (
-                      <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
-                        {coffeeBean.status}
-                      </span>
-                    ) : null}
+
+                    <p className="mt-5 text-xs text-gray-500">
+                      {formatDate(coffeeBean.created_at)}
+                    </p>
                   </div>
-
-                  <dl className="mt-4 grid gap-2 text-sm text-gray-600">
-                    <div className="flex justify-between gap-3">
-                      <dt>Code</dt>
-                      <dd className="text-right text-gray-900">
-                        {coffeeBean.code || "-"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>Country</dt>
-                      <dd className="text-right text-gray-900">
-                        {coffeeBean.country || "-"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>Roast</dt>
-                      <dd className="text-right text-gray-900">
-                        {coffeeBean.roast_level || "-"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>Process</dt>
-                      <dd className="text-right text-gray-900">
-                        {coffeeBean.process || "-"}
-                      </dd>
-                    </div>
-                  </dl>
-
-                  {coffeeBean.flavor_notes &&
-                  coffeeBean.flavor_notes.length > 0 ? (
-                    <ul className="mt-4 flex flex-wrap gap-2">
-                      {coffeeBean.flavor_notes.slice(0, 4).map((note) => (
-                        <li
-                          key={note}
-                          className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900"
-                        >
-                          {note}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-
-                <p className="mt-5 text-xs text-gray-500">
-                  {formatDate(coffeeBean.created_at)}
-                </p>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </section>
         ) : null}
       </div>

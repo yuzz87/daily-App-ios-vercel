@@ -114,14 +114,14 @@ export default function NewCoffeePage() {
               パッケージ画像
             </label>
             <p className="mt-1 text-sm text-gray-600">
-              スマホではカメラ撮影、PC では画像ファイル選択ができます。
+              スマートフォンではカメラ撮影、PC では画像ファイル選択ができます。
             </p>
 
             <input
               id="coffee-image"
               name="image"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               capture="environment"
               onChange={handleImageChange}
               disabled={isAnalyzing}

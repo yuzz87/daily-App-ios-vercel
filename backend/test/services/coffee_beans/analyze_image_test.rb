@@ -54,6 +54,46 @@ module CoffeeBeans
       end
     end
 
+    test "uses preprocessed image path for OCR when preprocessing succeeds" do
+      with_stubbed_singleton(ImagePreprocessor, :call, "preprocessed.png") do
+        with_stubbed_singleton(Ocr::TesseractClient, :call, ->(image_path:, **_kwargs) {
+          assert_equal "preprocessed.png", image_path
+          "OCR result text"
+        }) do
+          result = AnalyzeImage.call(image_path: "sample.jpg")
+
+          assert_equal "OCR result text", result[:raw_text]
+        end
+      end
+    end
+
+    test "falls back to original image path when preprocessing fails" do
+      with_stubbed_singleton(ImagePreprocessor, :call, ->(image_path:) {
+        assert_equal "sample.jpg", image_path
+        raise ImagePreprocessor::Error, "libvips is not available"
+      }) do
+        with_stubbed_singleton(Ocr::TesseractClient, :call, ->(image_path:, **_kwargs) {
+          assert_equal "sample.jpg", image_path
+          "OCR result text"
+        }) do
+          result = AnalyzeImage.call(image_path: "sample.jpg")
+
+          assert_equal "OCR result text", result[:raw_text]
+        end
+      end
+    end
+
+    test "passes original image path to OCR when preprocessing is unavailable for a missing file" do
+      with_stubbed_singleton(Ocr::TesseractClient, :call, ->(image_path:, **_kwargs) {
+        assert_equal "sample.jpg", image_path
+        "OCR result text"
+      }) do
+        result = AnalyzeImage.call(image_path: "sample.jpg")
+
+        assert_equal "OCR result text", result[:raw_text]
+      end
+    end
+
     test "applies parser fields from raw_text while leaving unparsed fields empty" do
       raw_text = <<~TEXT
         10-0816. postcoffee

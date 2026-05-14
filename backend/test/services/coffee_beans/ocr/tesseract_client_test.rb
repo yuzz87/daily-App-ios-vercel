@@ -26,7 +26,17 @@ module CoffeeBeans
 
       test "returns stdout from tesseract with default command and language" do
         with_stubbed_singleton(Open3, :capture3, ->(*args) {
-          assert_equal ["tesseract", "C:/tmp/sample image.jpg", "stdout", "-l", "eng"], args
+          assert_equal [
+            "tesseract",
+            "C:/tmp/sample image.jpg",
+            "stdout",
+            "-l",
+            "eng+jpn",
+            "--oem",
+            "1",
+            "--psm",
+            "6"
+          ], args
           ["recognized text", "", FakeStatus.new(true)]
         }) do
           assert_equal "recognized text", TesseractClient.call(image_path: "C:/tmp/sample image.jpg")
@@ -48,13 +58,43 @@ module CoffeeBeans
               "C:/tmp/sample image.jpg",
               "stdout",
               "-l",
-              "osd"
+              "osd",
+              "--oem",
+              "1",
+              "--psm",
+              "6"
             ], args
 
             ["recognized text", "", FakeStatus.new(true)]
           }) do
             assert_equal "recognized text", TesseractClient.call(image_path: "C:/tmp/sample image.jpg")
           end
+        end
+      end
+
+      test "uses explicit options when provided" do
+        with_stubbed_singleton(Open3, :capture3, ->(*args) {
+          assert_equal [
+            "tesseract",
+            "sample.png",
+            "stdout",
+            "-l",
+            "eng",
+            "--psm",
+            "11",
+            "tsv"
+          ], args
+          ["recognized text", "", FakeStatus.new(true)]
+        }) do
+          assert_equal(
+            "recognized text",
+            TesseractClient.call(
+              image_path: "sample.png",
+              lang: "eng",
+              options: ["--psm", "11"],
+              output_format: "tsv"
+            )
+          )
         end
       end
 

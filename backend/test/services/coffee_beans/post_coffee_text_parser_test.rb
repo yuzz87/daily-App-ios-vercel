@@ -100,6 +100,48 @@ module CoffeeBeans
       assert_equal "ブルーベリーヨーグルトのような乳酸感のある酸味とベリーの甘さ。", result[:description_ja]
     end
 
+    test "extracts usable fields from noisy peru package OCR" do
+      result = PostCoffeeTextParser.call(
+        region_texts: {
+          code: "|",
+          brand: "",
+          roast_level: "| PER-0722 PostCoffee LIGHTROAST",
+          name: "]\ni",
+          country: "| PER-0722 PostCoffee LIGHTROAST",
+          description: <<~TEXT,
+            Mandarin Orange, Loquat, Prune, Sweet
+            | | Region Process Cajamarca, Washed Long Cutervo, Fermentation Callayuc (48h)
+            Variety Typica, Caturra, Bourbon
+            | Elevation 1,800m - 2,000m
+          TEXT
+          flavors: "4 | Farmer _ : ROAST DATE. © Celso Juver_ Carrasco Diaz, Carlos & Osvaldo Vasquez, bee kee HlRScRiD=] Ebi sian rags an on os",
+          specs: "MAKE TIME TO ENJOY A FRESHLY BREWED CUP OF COFFEE BROUGHT TO YOU BY US.",
+          description_ja: "刀 5 失 プ や レ か ー な ン や 醇 訣 味 。 枢 九 の み の よ あ う る な IT や わ ぃ ら 余 か な 韻 が T 、 き じ に ん 、 わ 金 り と 打 長 を く 思 統 ゎ せ き る ま B",
+          all: <<~TEXT
+            | PER-0722 PostCoffee LIGHTROAST
+            Mandarin Orange, Loquat, Prune, Sweet
+            | | Region Process Cajamarca, Washed Long Cutervo, Fermentation Callayuc (48h)
+            Variety Typica, Caturra, Bourbon
+            4 | | Farmer _ : Elevation ROAST DATE. © Celso 1,800m Juver_ Carrasco Diaz, - 2,000m Carlos & Osvaldo Vasquez, bee kee HlRScRiD=] Ebi sian rags an on os
+          TEXT
+        }
+      )
+
+      assert_equal "PostCoffee", result[:brand]
+      assert_equal "PER-0722", result[:code]
+      assert_equal "PERU", result[:country]
+      assert_equal "LIGHTROAST", result[:roast_level]
+      assert_nil result[:name]
+      assert_nil result[:name_ja]
+      assert_nil result[:description_ja]
+      assert_equal ["Mandarin Orange", "Loquat", "Prune", "Sweet"], result[:flavor_notes]
+      assert_equal "Cajamarca, Cutervo, Callayuc", result[:region]
+      assert_equal "Washed Long Fermentation (48h)", result[:process]
+      assert_equal "Typica, Caturra, Bourbon", result[:variety]
+      assert_equal "1,800m - 2,000m", result[:elevation]
+      assert_equal "Celso Juver Carrasco Diaz, Carlos & Osvaldo Vasquez", result[:farmer]
+    end
+
     test "returns nil values when fields are not found" do
       result = PostCoffeeTextParser.call(raw_text: "unrelated text")
 

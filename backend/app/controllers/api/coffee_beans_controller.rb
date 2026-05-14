@@ -2,6 +2,10 @@ require "fileutils"
 require "securerandom"
 
 class Api::CoffeeBeansController < ApplicationController
+  ALLOWED_IMAGE_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
+  ALLOWED_IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .webp].freeze
+  MAX_IMAGE_SIZE = 10.megabytes
+
   before_action :set_coffee_bean, only: [:show, :update, :destroy]
 
   def index
@@ -19,6 +23,12 @@ class Api::CoffeeBeansController < ApplicationController
 
     unless image.respond_to?(:original_filename) && image.respond_to?(:read)
       render json: { errors: ["image is required"] }, status: :unprocessable_entity
+      return
+    end
+
+    validation_errors = uploaded_image_errors(image)
+    if validation_errors.present?
+      render json: { errors: validation_errors }, status: :unprocessable_entity
       return
     end
 
@@ -80,7 +90,6 @@ class Api::CoffeeBeansController < ApplicationController
     FileUtils.mkdir_p(upload_dir)
 
     extension = File.extname(image.original_filename.to_s).downcase
-    extension = ".jpg" if extension.blank?
     filename = "#{SecureRandom.uuid}#{extension}"
     path = upload_dir.join(filename)
 
@@ -90,6 +99,22 @@ class Api::CoffeeBeansController < ApplicationController
       path: path.to_s,
       url: "/uploads/coffee_beans/#{filename}"
     }
+  end
+
+  def uploaded_image_errors(image)
+    errors = []
+    extension = File.extname(image.original_filename.to_s).downcase
+    content_type = image.content_type.to_s
+
+    unless ALLOWED_IMAGE_EXTENSIONS.include?(extension) && ALLOWED_IMAGE_CONTENT_TYPES.include?(content_type)
+      errors << "image must be a JPEG, PNG, or WebP file"
+    end
+
+    if image.respond_to?(:size) && image.size.to_i > MAX_IMAGE_SIZE
+      errors << "image must be 10MB or smaller"
+    end
+
+    errors
   end
 
 end

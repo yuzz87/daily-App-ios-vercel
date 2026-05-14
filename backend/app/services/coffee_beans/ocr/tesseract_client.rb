@@ -5,7 +5,8 @@ module CoffeeBeans
   module Ocr
     class TesseractClient
       DEFAULT_COMMAND = "tesseract"
-      DEFAULT_LANG = "eng"
+      DEFAULT_LANG = "eng+jpn"
+      DEFAULT_OPTIONS = ["--oem", "1", "--psm", "6"].freeze
       DEFAULT_TIMEOUT = 10
 
       class Error < StandardError; end
@@ -13,7 +14,7 @@ module CoffeeBeans
       class ExecutionFailed < Error; end
       class TimeoutError < Error; end
 
-      def self.call(image_path:, lang: nil, options: [], output_format: nil)
+      def self.call(image_path:, lang: nil, options: nil, output_format: nil)
         new(
           image_path: image_path,
           lang: lang,
@@ -22,10 +23,10 @@ module CoffeeBeans
         ).call
       end
 
-      def initialize(image_path:, lang: nil, options: [], output_format: nil)
+      def initialize(image_path:, lang: nil, options: nil, output_format: nil)
         @image_path = image_path
         @lang = lang
-        @options = Array(options)
+        @options = options.nil? ? DEFAULT_OPTIONS : Array(options)
         @output_format = output_format
       end
 

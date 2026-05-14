@@ -9,7 +9,7 @@ module CoffeeBeans
     end
 
     def call
-      layout = PostCoffeeLayoutExtractor.call(image_path: image_path)
+      layout = PostCoffeeLayoutExtractor.call(image_path: ocr_image_path)
       extraction_data = {
         brand: nil,
         code: nil,
@@ -36,6 +36,13 @@ module CoffeeBeans
     private
 
     attr_reader :image_path
+
+    def ocr_image_path
+      ImagePreprocessor.call(image_path: image_path)
+    rescue ImagePreprocessor::Error => e
+      Rails.logger.warn("Coffee image preprocessing failed: #{e.class}: #{e.message}") if File.exist?(image_path)
+      image_path
+    end
 
     def parsed_fields(region_texts)
       return {} if region_texts.blank?
