@@ -13,7 +13,7 @@ class VoiceMemo < ApplicationRecord
       title: title,
       memo: memo,
       tags: tags,
-      audio_url: audio_url,
+      audio_url: id ? "/api/voice_memos/#{id}/audio" : nil,
       mime_type: mime_type,
       duration_ms: duration_ms,
       transcript: transcript,

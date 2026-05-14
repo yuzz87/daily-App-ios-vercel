@@ -364,25 +364,41 @@ function MemoDetail({ memo, onSave, onDelete }: MemoDetailProps) {
   const [localAudioUrl, setLocalAudioUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!memo.audio) {
-      const timeoutId = window.setTimeout(() => {
+    if (memo.audio) {
+      const url = URL.createObjectURL(memo.audio);
+      setLocalAudioUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
         setLocalAudioUrl(null);
-      }, 0);
-      return () => window.clearTimeout(timeoutId);
+      };
     }
 
-    const nextAudioUrl = URL.createObjectURL(memo.audio);
-    const timeoutId = window.setTimeout(() => {
-      setLocalAudioUrl(nextAudioUrl);
-    }, 0);
+    if (!memo.audioUrl) {
+      setLocalAudioUrl(null);
+      return;
+    }
+
+    let objectUrl: string | null = null;
+    let cancelled = false;
+
+    apiFetch(memo.audioUrl)
+      .then(async (res) => {
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setLocalAudioUrl(objectUrl);
+      })
+      .catch(() => {});
 
     return () => {
-      window.clearTimeout(timeoutId);
-      URL.revokeObjectURL(nextAudioUrl);
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setLocalAudioUrl(null);
     };
-  }, [memo.audio]);
+  }, [memo.audio, memo.audioUrl]);
 
-  const audioSource = localAudioUrl ?? memo.audioUrl ?? null;
+  const audioSource = localAudioUrl;
 
   async function handleSave() {
     await onSave({

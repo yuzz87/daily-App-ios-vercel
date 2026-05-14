@@ -20,7 +20,11 @@ Rails.application.routes.draw do
     resources :tasting_notes, only: [:update, :destroy]
     resources :study_sessions, only: [:index, :create]
     resource :active_timer, only: [:show, :update, :destroy]
-    resources :voice_memos, only: [:index, :create, :update, :destroy]
+    resources :voice_memos, only: [:index, :create, :update, :destroy] do
+      member do
+        get :audio
+      end
+    end
   end
 
   get "up" => "rails/health#show", as: :rails_health_check

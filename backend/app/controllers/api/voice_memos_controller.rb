@@ -12,7 +12,7 @@ class Api::VoiceMemosController < ApplicationController
   ALLOWED_AUDIO_EXTENSIONS = %w[.webm .m4a .mp4 .mp3 .wav].freeze
   MAX_AUDIO_SIZE = 50.megabytes
 
-  before_action :set_voice_memo, only: [:update, :destroy]
+  before_action :set_voice_memo, only: [:update, :destroy, :audio]
 
   def index
     voice_memos = VoiceMemo.order(updated_at: :desc)
@@ -57,6 +57,19 @@ class Api::VoiceMemosController < ApplicationController
     head :no_content
   end
 
+  def audio
+    file_path = resolve_audio_file_path(@voice_memo)
+
+    unless file_path && File.exist?(file_path)
+      head :not_found
+      return
+    end
+
+    send_file file_path,
+      type: @voice_memo.mime_type.presence || "audio/webm",
+      disposition: "inline"
+  end
+
   private
 
   def set_voice_memo
@@ -89,20 +102,30 @@ class Api::VoiceMemosController < ApplicationController
   end
 
   def save_uploaded_audio(audio)
-    upload_dir = Rails.root.join("public", "uploads", "voice_memos")
-    FileUtils.mkdir_p(upload_dir)
+    storage_dir = Rails.root.join("storage", "voice_memos")
+    FileUtils.mkdir_p(storage_dir)
 
     extension = File.extname(audio.original_filename.to_s).downcase
     extension = extension_for_content_type(audio.content_type) if extension.blank?
     filename = "#{SecureRandom.uuid}#{extension}"
-    path = upload_dir.join(filename)
+    path = storage_dir.join(filename)
 
     File.binwrite(path, audio.read)
 
     {
       path: path.to_s,
-      url: "/uploads/voice_memos/#{filename}"
+      url: filename
     }
+  end
+
+  def resolve_audio_file_path(memo)
+    return nil if memo.audio_url.blank?
+
+    if memo.audio_url.start_with?("/uploads/")
+      Rails.root.join("public", memo.audio_url.delete_prefix("/"))
+    else
+      Rails.root.join("storage", "voice_memos", File.basename(memo.audio_url))
+    end
   end
 
   def uploaded_audio_errors(audio)
