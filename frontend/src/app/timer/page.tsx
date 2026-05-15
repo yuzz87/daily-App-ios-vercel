@@ -1,6 +1,6 @@
 "use client"
 
-import ThreeBox from "./components/three/ThreeBox"
+//import ThreeBox from "./components/three/ThreeBox"
 import StopwatchPanel from "./components/StopwatchPanel"
 import CountdownPanel from "./components/CountdownPanel"
 import { useSwipeNavigation } from "./hooks/useSwipeNavigation"
@@ -13,7 +13,7 @@ export default function TimerPage() {
 
   return (
     <>
-      <ThreeBox />
+      {/*<ThreeBox />}
 
       {/* Panel indicator dots */}
       <div className="fixed top-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
