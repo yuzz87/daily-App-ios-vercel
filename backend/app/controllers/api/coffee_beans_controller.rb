@@ -18,6 +18,32 @@ class Api::CoffeeBeansController < ApplicationController
     render json: @coffee_bean.as_json_for_api(include_tasting_notes: true)
   end
 
+  def create
+    coffee_bean = CoffeeBean.new(coffee_bean_params)
+    image = params[:image]
+
+    if image.present?
+      unless image.respond_to?(:original_filename) && image.respond_to?(:read)
+        render json: { errors: ["image must be a file"] }, status: :unprocessable_entity
+        return
+      end
+
+      validation_errors = uploaded_image_errors(image)
+      if validation_errors.present?
+        render json: { errors: validation_errors }, status: :unprocessable_entity
+        return
+      end
+
+      coffee_bean.image_url = save_uploaded_image(image)[:url]
+    end
+
+    if coffee_bean.save
+      render json: coffee_bean.as_json_for_api, status: :created
+    else
+      render json: { errors: coffee_bean.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   def analyze
     image = params[:image]
 
