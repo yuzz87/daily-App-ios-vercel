@@ -3,6 +3,7 @@ import { ClientAuthGuard } from "./components/ClientAuthGuard";
 import Footer from "./components/Footer";
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import { StopwatchProvider } from "./components/StopwatchProvider";
+import { publicUrl } from "@/lib/publicPath";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function Layout({
   return (
     <html lang="ja">
       <head>
-        <link rel="manifest" href="/PWA-Test-daily-v1/manifest.json" />
+        <link rel="manifest" href={publicUrl("/manifest.json")} />
         <meta name="theme-color" content="#1a1a1a" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

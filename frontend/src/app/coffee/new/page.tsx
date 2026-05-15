@@ -6,17 +6,79 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/auth";
 
-type AnalyzeResponse = {
+type AnalyzeMode = "legacy" | "mastra";
+
+type LegacyAnalyzeResponse = {
   id?: number;
+};
+
+type CoffeeBeanAnalyzeResult = {
+  brand: string | null;
+  code: string | null;
+  country: string | null;
+  description_ja: string | null;
+  elevation: string | null;
+  farm: string | null;
+  farmer: string | null;
+  flavor_notes: string[];
+  is_limited: boolean;
+  name: string | null;
+  name_ja: string | null;
+  process: string | null;
+  raw_text: string | null;
+  region: string | null;
+  roast_level: string | null;
+  status: "draft";
+  variety: string | null;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+const modeOptions: Array<{
+  value: AnalyzeMode;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "legacy",
+    label: "Existing OCR",
+    description: "Use the current Rails extraction flow and continue to the edit screen.",
+  },
+  {
+    value: "mastra",
+    label: "Mastra AI",
+    description: "Analyze with the Mastra image agent, review the result, then save.",
+  },
+];
+
+const resultFields: Array<{
+  key: keyof CoffeeBeanAnalyzeResult;
+  label: string;
+}> = [
+  { key: "brand", label: "Brand" },
+  { key: "code", label: "Code" },
+  { key: "name", label: "Name" },
+  { key: "name_ja", label: "Japanese name" },
+  { key: "country", label: "Country" },
+  { key: "region", label: "Region" },
+  { key: "process", label: "Process" },
+  { key: "roast_level", label: "Roast level" },
+  { key: "variety", label: "Variety" },
+  { key: "elevation", label: "Elevation" },
+  { key: "farmer", label: "Farmer" },
+  { key: "farm", label: "Farm" },
+  { key: "description_ja", label: "Description" },
+  { key: "raw_text", label: "Raw text" },
+];
+
 export default function NewCoffeePage() {
   const router = useRouter();
+  const [mode, setMode] = useState<AnalyzeMode>("legacy");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<CoffeeBeanAnalyzeResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 
@@ -27,6 +89,12 @@ export default function NewCoffeePage() {
       }
     };
   }, []);
+
+  function handleModeChange(nextMode: AnalyzeMode) {
+    setMode(nextMode);
+    setErrorMessage(null);
+    setResult(null);
+  }
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -40,6 +108,7 @@ export default function NewCoffeePage() {
     previewUrlRef.current = nextPreviewUrl;
 
     setErrorMessage(null);
+    setResult(null);
     setSelectedImage(file);
     setPreviewUrl(nextPreviewUrl);
   }
@@ -47,13 +116,22 @@ export default function NewCoffeePage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!API_BASE_URL) {
-      setErrorMessage("NEXT_PUBLIC_API_BASE_URL が設定されていません。");
+    if (!selectedImage) {
+      setErrorMessage("Select a coffee package image.");
       return;
     }
 
-    if (!selectedImage) {
-      setErrorMessage("読み取るパッケージ画像を選択してください。");
+    if (mode === "legacy") {
+      await analyzeWithLegacyFlow(selectedImage);
+      return;
+    }
+
+    await analyzeWithMastra(selectedImage);
+  }
+
+  async function analyzeWithLegacyFlow(image: File) {
+    if (!API_BASE_URL) {
+      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not defined.");
       return;
     }
 
@@ -65,7 +143,7 @@ export default function NewCoffeePage() {
 
     try {
       const formData = new FormData();
-      formData.append("image", selectedImage);
+      formData.append("image", image);
 
       const res = await apiFetch(`${API_BASE_URL}/coffee_beans/analyze`, {
         method: "POST",
@@ -75,57 +153,157 @@ export default function NewCoffeePage() {
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        const message = await getErrorMessage(res);
+        const message = await getErrorMessage(res, "Image extraction failed.");
         setErrorMessage(message);
         return;
       }
 
-      const data = (await res.json()) as AnalyzeResponse;
+      const data = (await res.json()) as LegacyAnalyzeResponse;
 
       if (typeof data.id !== "number") {
-        setErrorMessage("読み取り結果にコーヒー豆 ID が含まれていません。");
+        setErrorMessage("The extraction response did not include a coffee bean ID.");
         return;
       }
 
       router.push(`/coffee/edit?id=${data.id}`);
-    } catch (e) {
+    } catch (error) {
       clearTimeout(timeoutId);
-      if (e instanceof Error && e.name === "AbortError") {
+      if (error instanceof Error && error.name === "AbortError") {
         router.push("/coffee?processing=true");
       } else {
-        setErrorMessage("Rails API に接続できませんでした。");
+        setErrorMessage("Could not connect to the Rails API.");
       }
     } finally {
       setIsAnalyzing(false);
     }
   }
 
+  async function analyzeWithMastra(image: File) {
+    setIsAnalyzing(true);
+    setErrorMessage(null);
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", image);
+
+      const res = await fetch("/api/coffee/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const message = await getErrorMessage(res, "Mastra image analysis failed.");
+        setErrorMessage(message);
+        return;
+      }
+
+      const data = (await res.json()) as { coffee_bean?: CoffeeBeanAnalyzeResult };
+      if (!data.coffee_bean) {
+        setErrorMessage("The Mastra response did not include coffee bean data.");
+        return;
+      }
+
+      setResult(data.coffee_bean);
+    } catch {
+      setErrorMessage("Could not connect to the Mastra analysis API.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
+  async function handleSaveMastraResult() {
+    if (!API_BASE_URL) {
+      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not defined.");
+      return;
+    }
+
+    if (!result || !selectedImage) {
+      setErrorMessage("Analyze an image before saving.");
+      return;
+    }
+
+    setIsSaving(true);
+    setErrorMessage(null);
+
+    try {
+      const formData = buildCreateFormData(result, selectedImage);
+      const res = await apiFetch(`${API_BASE_URL}/coffee_beans`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const message = await getErrorMessage(res, "Failed to save the coffee bean.");
+        setErrorMessage(message);
+        return;
+      }
+
+      const data = (await res.json()) as { id?: number };
+      if (typeof data.id === "number") {
+        router.push(`/coffee/edit?id=${data.id}`);
+        return;
+      }
+
+      router.push("/coffee");
+    } catch {
+      setErrorMessage("Could not connect to the Rails API.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <main className="h-full overflow-y-auto bg-stone-50 px-4 py-6 text-gray-900 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-6">
+      <div className="mx-auto flex max-w-4xl flex-col gap-6 pb-6">
         <header className="border-b border-stone-200 pb-5">
           <Link
             href="/coffee"
             className="text-sm font-medium text-amber-800 transition hover:text-amber-950"
           >
-            コーヒー豆一覧へ戻る
+            Back to coffee records
           </Link>
-          <h1 className="mt-4 text-3xl font-semibold">コーヒー豆を登録</h1>
+          <h1 className="mt-4 text-3xl font-semibold">Register coffee package</h1>
           <p className="mt-2 text-sm leading-6 text-gray-600">
-            PostCoffee のパッケージ画像を選択して、読み取り結果の確認画面へ進みます。
+            Choose the extraction method, upload a package image, and review the result before saving.
           </p>
         </header>
 
+        <section className="rounded-md border border-stone-200 bg-white p-2 shadow-sm">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {modeOptions.map((option) => {
+              const selected = mode === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleModeChange(option.value)}
+                  disabled={isAnalyzing || isSaving}
+                  aria-pressed={selected}
+                  className={`rounded-md border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    selected
+                      ? "border-amber-800 bg-amber-50 text-amber-950"
+                      : "border-transparent text-gray-700 hover:border-stone-200 hover:bg-stone-50"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold">{option.label}</span>
+                  <span className="mt-1 block text-xs leading-5 text-gray-600">
+                    {option.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <section className="rounded-md border border-stone-200 bg-white p-5 shadow-sm">
-            <label
-              htmlFor="coffee-image"
-              className="block text-sm font-semibold text-gray-900"
-            >
-              パッケージ画像
+            <label htmlFor="coffee-image" className="block text-sm font-semibold text-gray-900">
+              Package image
             </label>
             <p className="mt-1 text-sm text-gray-600">
-              スマートフォンではカメラ撮影、PC では画像ファイル選択ができます。
+              JPEG, PNG, and WebP images are supported.
             </p>
 
             <input
@@ -135,7 +313,7 @@ export default function NewCoffeePage() {
               accept="image/jpeg,image/png,image/webp"
               capture="environment"
               onChange={handleImageChange}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || isSaving}
               className="mt-4 block w-full rounded-md border border-stone-300 bg-white text-sm text-gray-900 file:mr-4 file:min-h-11 file:border-0 file:bg-amber-800 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
             />
 
@@ -143,7 +321,7 @@ export default function NewCoffeePage() {
               <div className="mt-5 overflow-hidden rounded-md border border-stone-200 bg-stone-100">
                 <Image
                   src={previewUrl}
-                  alt="選択したコーヒーパッケージ画像のプレビュー"
+                  alt="Selected coffee package preview"
                   width={960}
                   height={720}
                   className="h-auto max-h-[60vh] w-full object-contain"
@@ -152,18 +330,71 @@ export default function NewCoffeePage() {
               </div>
             ) : (
               <div className="mt-5 flex min-h-64 items-center justify-center rounded-md border border-dashed border-stone-300 bg-stone-100 px-4 text-center text-sm text-gray-500">
-                画像を選択すると、ここにプレビューが表示されます。
+                Select an image to preview it here.
               </div>
             )}
           </section>
 
           {errorMessage ? (
-            <div
-              role="alert"
-              className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-            >
+            <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {errorMessage}
             </div>
+          ) : null}
+
+          {result ? (
+            <section className="rounded-md border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Mastra analysis result</h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Save the result to create a draft, then confirm the fields on the edit screen.
+                  </p>
+                </div>
+                <span className="w-fit rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
+                  {result.status}
+                </span>
+              </div>
+
+              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                {resultFields.map((field) => (
+                  <div key={field.key} className="rounded-md border border-stone-200 bg-stone-50 p-3">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {field.label}
+                    </dt>
+                    <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-900">
+                      {formatResultValue(result[field.key])}
+                    </dd>
+                  </div>
+                ))}
+                <div className="rounded-md border border-stone-200 bg-stone-50 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Flavor notes
+                  </dt>
+                  <dd className="mt-2 flex flex-wrap gap-2">
+                    {result.flavor_notes.length > 0 ? (
+                      result.flavor_notes.map((note) => (
+                        <span
+                          key={note}
+                          className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-950"
+                        >
+                          {note}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-500">-</span>
+                    )}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-stone-200 bg-stone-50 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Limited coffee
+                  </dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    {result.is_limited ? "Yes" : "No"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
           ) : null}
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -171,15 +402,26 @@ export default function NewCoffeePage() {
               href="/coffee"
               className="inline-flex min-h-11 items-center justify-center rounded-md border border-stone-300 px-4 text-sm font-semibold text-gray-700 transition hover:bg-white"
             >
-              キャンセル
+              Cancel
             </Link>
-            <button
-              type="submit"
-              disabled={!selectedImage || isAnalyzing}
-              className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
-            >
-              {isAnalyzing ? "読み取り中...(最大4分)" : "AIで読み取る"}
-            </button>
+            {mode === "mastra" && result ? (
+              <button
+                type="button"
+                onClick={handleSaveMastraResult}
+                disabled={isSaving || isAnalyzing}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
+              >
+                {isSaving ? "Saving..." : "Save Mastra result"}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!selectedImage || isAnalyzing || isSaving}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
+              >
+                {isAnalyzing ? "Analyzing..." : mode === "legacy" ? "Analyze with existing OCR" : "Analyze with Mastra"}
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -187,7 +429,30 @@ export default function NewCoffeePage() {
   );
 }
 
-async function getErrorMessage(res: Response): Promise<string> {
+function buildCreateFormData(result: CoffeeBeanAnalyzeResult, image: File): FormData {
+  const formData = new FormData();
+  formData.append("image", image);
+
+  Object.entries(result).forEach(([key, value]) => {
+    if (key === "flavor_notes") {
+      result.flavor_notes.forEach((note) => formData.append("coffee_bean[flavor_notes][]", note));
+      return;
+    }
+
+    if (value === null || value === undefined) return;
+    formData.append(`coffee_bean[${key}]`, String(value));
+  });
+
+  return formData;
+}
+
+function formatResultValue(value: CoffeeBeanAnalyzeResult[keyof CoffeeBeanAnalyzeResult]): string {
+  if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return value || "-";
+}
+
+async function getErrorMessage(res: Response, fallbackMessage: string): Promise<string> {
   try {
     const data = await res.json();
 
@@ -199,8 +464,8 @@ async function getErrorMessage(res: Response): Promise<string> {
       return data.error;
     }
   } catch {
-    return "画像の読み取りに失敗しました。";
+    return fallbackMessage;
   }
 
-  return "画像の読み取りに失敗しました。";
+  return fallbackMessage;
 }
