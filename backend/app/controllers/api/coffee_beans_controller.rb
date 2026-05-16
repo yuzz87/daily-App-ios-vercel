@@ -121,10 +121,17 @@ class Api::CoffeeBeansController < ApplicationController
 
     File.binwrite(path, image.read)
 
-    {
-      path: path.to_s,
-      url: "/uploads/coffee_beans/#{filename}"
-    }
+    # Cloudinary credentials が設定されている場合は永続ストレージにアップロード
+    if ENV["CLOUDINARY_CLOUD_NAME"].present?
+      result = Cloudinary::Uploader.upload(
+        path.to_s,
+        folder: "coffee_beans",
+        resource_type: "image"
+      )
+      { path: path.to_s, url: result["secure_url"] }
+    else
+      { path: path.to_s, url: "/uploads/coffee_beans/#{filename}" }
+    end
   end
 
   def uploaded_image_errors(image)
