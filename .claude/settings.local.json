@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(dir \"C:\\\\Users\\\\homur\\\\Desktop\\\\NextRailsV2\\\\Calendar\\\\frontend\\\\src\\\\app\" /s /b /a-d)",
-      "Bash(findstr \".tsx\")"
-    ]
-  }
-}

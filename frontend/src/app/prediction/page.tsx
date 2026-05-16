@@ -145,6 +145,9 @@ export default function PredictionPage() {
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [notionMessage, setNotionMessage] = useState<string | null>(null);
+  const [notionError, setNotionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!API_BASE_URL) {
@@ -188,6 +191,35 @@ export default function PredictionPage() {
   const monthlyAverageSeconds = averageTotal(sumBy(studySessions, monthKey));
   const predictedTodaySeconds = predictTodaySeconds(studySessions);
 
+  async function handleExportStats() {
+    setIsExporting(true);
+    setNotionMessage(null);
+    setNotionError(null);
+    try {
+      const res = await fetch("/api/notion/export-stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          weeklyAverageSeconds,
+          monthlyAverageSeconds,
+          totalSeconds,
+          predictedTodaySeconds,
+          weekRange: `${weekBars[0]?.key ?? ""} ~ ${weekBars[6]?.key ?? ""}`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setNotionError((data as { error?: string }).error ?? "Notion への送信に失敗しました。");
+        return;
+      }
+      setNotionMessage("Stats exported to Notion.");
+    } catch {
+      setNotionError("Notion に接続できませんでした。");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <main className="h-full overflow-y-auto bg-gray-50 px-4 py-6 text-gray-900 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-3xl gap-4 pb-6">
@@ -220,6 +252,26 @@ export default function PredictionPage() {
                 label="今日の予測学習時間"
                 value={formatDuration(predictedTodaySeconds)}
               />
+            </section>
+
+            <section className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+              <span className="text-sm font-semibold text-gray-500">Notion Export</span>
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  onClick={handleExportStats}
+                  disabled={isExporting || studySessions.length === 0}
+                  className="rounded border border-gray-950 bg-gray-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-300 disabled:text-gray-500"
+                >
+                  {isExporting ? "Sending..." : "Export Stats"}
+                </button>
+                {notionMessage ? (
+                  <p className="text-xs text-green-700">{notionMessage}</p>
+                ) : null}
+                {notionError ? (
+                  <p role="alert" className="text-xs text-red-700">{notionError}</p>
+                ) : null}
+              </div>
             </section>
           </>
         ) : null}
