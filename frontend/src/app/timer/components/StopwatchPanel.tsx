@@ -24,8 +24,12 @@ export default function StopwatchPanel() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const [notionMessage, setNotionMessage] = useState<string | null>(null)
+  const [notionError, setNotionError] = useState<string | null>(null)
 
   const canSave = elapsedTime > 0 && !isRunning && !isSaving
+  const canExport = elapsedTime > 0 && !isRunning && !isExporting
   const durationSeconds = useMemo(
     () => Math.max(1, Math.round(elapsedTime / 1000)),
     [elapsedTime],
@@ -64,6 +68,38 @@ export default function StopwatchPanel() {
 
   function handleCategoryChange(event: ChangeEvent<HTMLInputElement>) {
     setCategory(event.target.value)
+  }
+
+  async function handleExportToNotion() {
+    if (!category.trim()) {
+      setNotionError("Category is required.")
+      return
+    }
+    setIsExporting(true)
+    setNotionMessage(null)
+    setNotionError(null)
+    try {
+      const res = await fetch("/api/notion/export-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: category.trim(),
+          duration_seconds: durationSeconds,
+          recorded_at: new Date().toISOString(),
+          memo: null,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setNotionError((data as { error?: string }).error ?? "Notion への送信に失敗しました。")
+        return
+      }
+      setNotionMessage("Exported to Notion.")
+    } catch {
+      setNotionError("Notion に接続できませんでした。")
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   async function handleSave() {
@@ -214,6 +250,15 @@ export default function StopwatchPanel() {
             {isSaving ? "Saving" : "Save"}
           </button>
 
+          <button
+            type="button"
+            onClick={handleExportToNotion}
+            disabled={!canExport}
+            className="h-20 w-20 border border-gray-950 bg-white text-xs font-bold shadow-md transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400"
+          >
+            {isExporting ? "Sending" : "Notion"}
+          </button>
+
           {saveMessage ? (
             <p className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
               {saveMessage}
@@ -226,6 +271,21 @@ export default function StopwatchPanel() {
               className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
             >
               {errorMessage}
+            </p>
+          ) : null}
+
+          {notionMessage ? (
+            <p className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
+              {notionMessage}
+            </p>
+          ) : null}
+
+          {notionError ? (
+            <p
+              role="alert"
+              className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
+            >
+              {notionError}
             </p>
           ) : null}
         </section>
