@@ -196,7 +196,7 @@ export default function PredictionPage() {
     setNotionMessage(null);
     setNotionError(null);
     try {
-      const res = await apiFetch("/api/notion/export-stats", {
+      const res = await apiFetch(`${API_BASE_URL}/notion/export_stats`, {
         method: "POST",
         body: JSON.stringify({
           weeklyAverageSeconds,

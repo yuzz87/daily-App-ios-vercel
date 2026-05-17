@@ -19,6 +19,10 @@ Rails.application.routes.draw do
     end
     resources :tasting_notes, only: [:update, :destroy]
     resources :study_sessions, only: [:index, :create]
+    namespace :notion do
+      post :export_session
+      post :export_stats
+    end
     resource :active_timer, only: [:show, :update, :destroy]
     resources :voice_memos, only: [:index, :create, :update, :destroy] do
       member do
