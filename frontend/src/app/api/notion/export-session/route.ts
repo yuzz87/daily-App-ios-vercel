@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import {
-  notionClient,
-  buildSessionProperties,
-  type SessionExportPayload,
-} from "@/lib/notion"
+import { notionClient, buildSessionPage, type SessionExportPayload } from "@/lib/notion"
 
 export const runtime = "nodejs"
 
@@ -28,10 +24,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const notion = notionClient()
-    await notion.pages.create(buildSessionProperties(dbId, payload))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await notion.pages.create(buildSessionPage(dbId, payload) as any)
     return NextResponse.json({ ok: true })
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error"
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[notion/export-session]", message)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

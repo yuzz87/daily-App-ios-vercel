@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import {
-  notionClient,
-  buildSnapshotProperties,
-  type StatsExportPayload,
-} from "@/lib/notion"
+import { notionClient, buildSnapshotPage, type StatsExportPayload } from "@/lib/notion"
 
 export const runtime = "nodejs"
 
@@ -24,10 +20,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const notion = notionClient()
-    await notion.pages.create(buildSnapshotProperties(dbId, payload))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await notion.pages.create(buildSnapshotPage(dbId, payload) as any)
     return NextResponse.json({ ok: true })
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error"
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[notion/export-stats]", message)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
