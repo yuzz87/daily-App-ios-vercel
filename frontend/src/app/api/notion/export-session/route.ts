@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { notionClient, buildSessionPage, type SessionExportPayload } from "@/lib/notion"
+import { verifyRailsJwt } from "@/lib/verifyToken"
 
 export const runtime = "nodejs"
 
 export async function POST(req: NextRequest) {
+  if (!verifyRailsJwt(req.headers.get("authorization"))) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
+  }
+
   const token = process.env.NOTION_TOKEN
   const dbId = process.env.NOTION_DATABASE_ID
 

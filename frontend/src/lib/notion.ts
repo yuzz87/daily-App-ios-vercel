@@ -1,5 +1,4 @@
 import { Client } from "@notionhq/client"
-import type { BlockObjectRequest } from "@notionhq/client/build/src/api-endpoints"
 
 export type SessionExportPayload = {
   category: string
@@ -32,55 +31,40 @@ export function formatDurationLabel(seconds: number): string {
   return `${remainingSeconds}秒`
 }
 
-function paragraph(content: string): BlockObjectRequest {
-  return {
-    object: "block",
-    type: "paragraph",
-    paragraph: {
-      rich_text: [{ type: "text", text: { content } }],
-    },
-  }
-}
-
 export function buildSessionPage(databaseId: string, payload: SessionExportPayload) {
   const label = formatDurationLabel(payload.duration_seconds)
   const title = `${payload.category} · ${label}`
-  const recordedAt = new Date(payload.recorded_at).toLocaleString("ja-JP")
+  const now = new Date().toISOString()
 
   return {
     parent: { database_id: databaseId },
     properties: {
-      title: {
-        title: [{ text: { content: title } }],
-      },
+      title: { title: [{ text: { content: title } }] },
+      Type: { select: { name: "session" } },
+      Category: { select: { name: payload.category } },
+      Duration: { number: payload.duration_seconds },
+      "Duration (formatted)": { rich_text: [{ text: { content: label } }] },
+      "Recorded At": { date: { start: payload.recorded_at } },
+      ...(payload.memo ? { Memo: { rich_text: [{ text: { content: payload.memo } }] } } : {}),
+      "Exported At": { date: { start: now } },
     },
-    children: [
-      paragraph(`カテゴリ: ${payload.category}`),
-      paragraph(`時間: ${label} (${payload.duration_seconds}秒)`),
-      paragraph(`記録日時: ${recordedAt}`),
-      paragraph(`エクスポート: ${new Date().toLocaleString("ja-JP")}`),
-      ...(payload.memo ? [paragraph(`メモ: ${payload.memo}`)] : []),
-    ],
   }
 }
 
 export function buildSnapshotPage(databaseId: string, payload: StatsExportPayload) {
   const title = `Stats Snapshot · ${payload.weekRange}`
+  const now = new Date().toISOString()
 
   return {
     parent: { database_id: databaseId },
     properties: {
-      title: {
-        title: [{ text: { content: title } }],
-      },
+      title: { title: [{ text: { content: title } }] },
+      Type: { select: { name: "snapshot" } },
+      "Weekly Average": { number: payload.weeklyAverageSeconds },
+      "Monthly Average": { number: payload.monthlyAverageSeconds },
+      "Total Time": { number: payload.totalSeconds },
+      "Today's Prediction": { number: payload.predictedTodaySeconds },
+      "Exported At": { date: { start: now } },
     },
-    children: [
-      paragraph(`週別平均: ${formatDurationLabel(payload.weeklyAverageSeconds)}`),
-      paragraph(`月別平均: ${formatDurationLabel(payload.monthlyAverageSeconds)}`),
-      paragraph(`累計時間: ${formatDurationLabel(payload.totalSeconds)}`),
-      paragraph(`今日の予測: ${formatDurationLabel(payload.predictedTodaySeconds)}`),
-      paragraph(`期間: ${payload.weekRange}`),
-      paragraph(`エクスポート: ${new Date().toLocaleString("ja-JP")}`),
-    ],
   }
 }

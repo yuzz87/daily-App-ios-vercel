@@ -79,9 +79,8 @@ export default function StopwatchPanel() {
     setNotionMessage(null)
     setNotionError(null)
     try {
-      const res = await fetch("/api/notion/export-session", {
+      const res = await apiFetch("/api/notion/export-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           category: category.trim(),
           duration_seconds: durationSeconds,
