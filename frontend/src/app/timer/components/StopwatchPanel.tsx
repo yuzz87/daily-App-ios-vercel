@@ -21,6 +21,7 @@ export default function StopwatchPanel() {
     markSaved,
     setCategory,
   } = useStopwatch()
+
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -30,6 +31,7 @@ export default function StopwatchPanel() {
 
   const canSave = elapsedTime > 0 && !isRunning && !isSaving
   const canExport = elapsedTime > 0 && !isRunning && !isExporting
+
   const durationSeconds = useMemo(
     () => Math.max(1, Math.round(elapsedTime / 1000)),
     [elapsedTime],
@@ -49,6 +51,7 @@ export default function StopwatchPanel() {
       stopTimer()
       return
     }
+
     setSaveMessage(null)
     setErrorMessage(null)
     startTimer()
@@ -61,6 +64,7 @@ export default function StopwatchPanel() {
       )
       if (!confirmed) return
     }
+
     resetTimer()
     setSaveMessage(null)
     setErrorMessage(null)
@@ -71,13 +75,20 @@ export default function StopwatchPanel() {
   }
 
   async function handleExportToNotion() {
+    if (!API_BASE_URL) {
+      setNotionError("NEXT_PUBLIC_API_BASE_URL is not configured.")
+      return
+    }
+
     if (!category.trim()) {
       setNotionError("Category is required.")
       return
     }
+
     setIsExporting(true)
     setNotionMessage(null)
     setNotionError(null)
+
     try {
       const res = await apiFetch(`${API_BASE_URL}/notion/export_session`, {
         method: "POST",
@@ -88,11 +99,15 @@ export default function StopwatchPanel() {
           memo: null,
         }),
       })
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setNotionError((data as { error?: string }).error ?? "Notion への送信に失敗しました。")
+        setNotionError(
+          (data as { error?: string }).error ?? "Notion への送信に失敗しました。",
+        )
         return
       }
+
       setNotionMessage("Exported to Notion.")
     } catch {
       setNotionError("Notion に接続できませんでした。")
@@ -153,19 +168,19 @@ export default function StopwatchPanel() {
 
   return (
     <main className="relative z-10 min-h-full px-4 pt-10 pb-32 text-gray-950">
-      <div className="mx-auto flex w-fit flex-col items-center gap-6">
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
         <section className="rounded-md border border-gray-950 bg-white/85 px-8 py-5 shadow-[5px_6px_2px_rgba(0,0,0,0.8)]">
-          <p className="tabular-nums text-5xl font-bold sm:text-6xl">
+          <p className="tabular-nums text-4xl font-bold">
             {formatTime(elapsedTime)}
           </p>
         </section>
 
-        <section className="flex gap-14 sm:gap-20">
+        <section className="flex w-full justify-center gap-14 sm:gap-20">
           {isRunning ? (
             <button
               type="button"
               onClick={recordLap}
-              className="h-20 w-20 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
+              className="h-14 w-14 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
             >
               Lap
             </button>
@@ -173,7 +188,7 @@ export default function StopwatchPanel() {
             <button
               type="button"
               onClick={handleReset}
-              className="h-20 w-20 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
+              className="h-14 w-14 rounded-full border border-gray-950 bg-yellow-200 text-sm font-bold shadow-md transition hover:bg-yellow-300"
             >
               Reset
             </button>
@@ -182,7 +197,7 @@ export default function StopwatchPanel() {
           <button
             type="button"
             onClick={handleStartStop}
-            className={`h-20 w-20 rounded-full border border-gray-950 text-sm font-bold shadow-md transition ${
+            className={`h-14 w-14 rounded-full border border-gray-950 text-sm font-bold shadow-md transition ${
               isRunning
                 ? "bg-red-300 hover:bg-red-400"
                 : "bg-green-300 hover:bg-green-400"
@@ -192,7 +207,7 @@ export default function StopwatchPanel() {
           </button>
         </section>
 
-        <section className="w-full max-w-sm rounded-md bg-white/85 px-4 shadow-md">
+        <section className="w-full max-w-xs rounded-md bg-white/85 px-4 shadow-md">
           {elapsedTime === 0 && laps.length === 0 ? (
             <p className="py-4 text-center text-sm text-gray-600" />
           ) : (
@@ -219,74 +234,75 @@ export default function StopwatchPanel() {
           )}
         </section>
 
-        {/* Category / Save — inline below lap list */}
-        <section className="flex flex-col items-center gap-4">
-          <label className="grid h-20 w-20 place-items-center border border-gray-950 bg-white/85 p-2 shadow-md">
-            <span className="sr-only">Category</span>
-            <input
-              value={category}
-              onChange={handleCategoryChange}
-              list="study-session-categories"
-              disabled={isSaving}
-              aria-label="Category"
-              className="h-full w-full bg-transparent text-center text-xs font-bold leading-tight outline-none disabled:cursor-not-allowed"
-            />
-            <datalist id="study-session-categories">
-              <option value="Programming" />
-              <option value="Sleep" />
-              <option value="English" />
-              <option value="Math" />
-              <option value="Reading" />
-            </datalist>
-          </label>
+        <section className="absolute right-1/2 bottom-6 z-20 translate-x-1/2 px-4">
+          <div className="relative flex items-center justify-center gap-10">
+            {saveMessage ? (
+              <p className="absolute bottom-16 left-1/2 w-56 -translate-x-1/2 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
+                {saveMessage}
+              </p>
+            ) : null}
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!canSave}
-            className="h-20 w-20 border border-gray-950 bg-gray-950 text-sm font-bold text-white shadow-md transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-300 disabled:text-gray-600"
-          >
-            {isSaving ? "Saving" : "Save"}
-          </button>
+            {errorMessage ? (
+              <p
+                role="alert"
+                className="absolute bottom-16 left-1/2 w-56 -translate-x-1/2 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
+              >
+                {errorMessage}
+              </p>
+            ) : null}
 
-          <button
-            type="button"
-            onClick={handleExportToNotion}
-            disabled={!canExport}
-            className="h-20 w-20 border border-gray-950 bg-white text-xs font-bold shadow-md transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400"
-          >
-            {isExporting ? "Sending" : "Notion"}
-          </button>
+            {notionMessage ? (
+              <p className="absolute bottom-16 left-1/2 w-56 -translate-x-1/2 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
+                {notionMessage}
+              </p>
+            ) : null}
 
-          {saveMessage ? (
-            <p className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
-              {saveMessage}
-            </p>
-          ) : null}
+            {notionError ? (
+              <p
+                role="alert"
+                className="absolute bottom-16 left-1/2 w-56 -translate-x-1/2 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
+              >
+                {notionError}
+              </p>
+            ) : null}
 
-          {errorMessage ? (
-            <p
-              role="alert"
-              className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
+            <label className="grid h-10 w-30 place-items-center bg-white/85 p-2 shadow-[5px_3px_3px_rgba(0,0,0,0.8)] hover:bg-yellow-300">
+              <span className="sr-only">Category</span>
+              <input
+                value={category}
+                onChange={handleCategoryChange}
+                list="study-session-categories"
+                disabled={isSaving}
+                aria-label="Category"
+                className="h-full w-full bg-transparent text-center text-xs font-bold leading-tight outline-none disabled:cursor-not-allowed"
+              />
+              <datalist id="study-session-categories">
+                <option value="Programming" />
+                <option value="Sleep" />
+                <option value="English" />
+                <option value="Math" />
+                <option value="Reading" />
+              </datalist>
+            </label>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!canSave}
+              className="h-10 w-18 bg-white text-sm font-bold  shadow-[5px_3px_3px_rgba(0,0,0,0.8)] transition hover:bg-yellow-300 disabled:cursor-not-allowed "
             >
-              {errorMessage}
-            </p>
-          ) : null}
+              {isSaving ? "Saving" : "Save"}
+            </button>
 
-          {notionMessage ? (
-            <p className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-green-700 shadow">
-              {notionMessage}
-            </p>
-          ) : null}
-
-          {notionError ? (
-            <p
-              role="alert"
-              className="w-48 rounded-md bg-white/90 px-3 py-2 text-center text-xs text-red-700 shadow"
+            <button
+              type="button"
+              onClick={handleExportToNotion}
+              disabled={!canExport}
+              className="h-10 w-18  bg-white text-xs font-bold shadow-[5px_3px_3px_rgba(0,0,0,0.8)] transition hover:bg-yellow-300 disabled:cursor-not-allowed"
             >
-              {notionError}
-            </p>
-          ) : null}
+              {isExporting ? "Sending" : "Notion"}
+            </button>
+          </div>
         </section>
       </div>
     </main>
@@ -296,11 +312,13 @@ export default function StopwatchPanel() {
 async function getErrorMessage(res: Response): Promise<string> {
   try {
     const data = await res.json()
+
     if (Array.isArray(data.errors) && data.errors.length > 0) {
       return data.errors.join("\n")
     }
   } catch {
     return "Failed to save the study session."
   }
+
   return "Failed to save the study session."
 }
