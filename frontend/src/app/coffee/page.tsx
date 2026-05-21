@@ -5,52 +5,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/auth";
-
-type CoffeeBean = {
-  id: number;
-  image_url: string | null;
-  brand: string | null;
-  code: string | null;
-  roast_level: string | null;
-  name: string | null;
-  country: string | null;
-  name_ja: string | null;
-  flavor_notes: string[] | null;
-  region: string | null;
-  process: string | null;
-  status: string | null;
-  created_at: string | null;
-};
+import type { CoffeeBean } from "./types";
+import { buildImageUrl, formatDate } from "./utils";
+import { buttonClasses } from "./styles";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-function buildImageUrl(imageUrl: string | null): string | null {
-  if (!imageUrl) {
-    return null;
-  }
-
-  if (/^https?:\/\//.test(imageUrl)) {
-    return imageUrl;
-  }
-
-  if (!API_BASE_URL) {
-    return imageUrl;
-  }
-
-  return `${new URL(API_BASE_URL).origin}${imageUrl}`;
-}
-
-function formatDate(value: string | null): string {
-  if (!value) {
-    return "登録日未設定";
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}
 
 function getDisplayName(coffeeBean: CoffeeBean): string {
   return coffeeBean.name || coffeeBean.name_ja || "名称未設定";
@@ -93,10 +52,7 @@ export default function CoffeePage() {
             <p className="text-sm font-medium text-amber-700">Coffee Records</p>
             <h1 className="mt-1 text-3xl font-semibold">コーヒー豆一覧</h1>
           </div>
-          <Link
-            href="/coffee/new"
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900"
-          >
+          <Link href="/coffee/new" className={buttonClasses.primary}>
             新しい豆を登録
           </Link>
         </header>
@@ -226,7 +182,7 @@ export default function CoffeePage() {
                     </div>
 
                     <p className="mt-5 text-xs text-gray-500">
-                      {formatDate(coffeeBean.created_at)}
+                      {formatDate(coffeeBean.created_at, "登録日未設定")}
                     </p>
                   </div>
                 </Link>

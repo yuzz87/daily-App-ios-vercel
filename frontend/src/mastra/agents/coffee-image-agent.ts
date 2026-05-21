@@ -39,7 +39,7 @@ Rules:
 - is_limited is true only when the image indicates a limited product.
 - Do not invent inferred values.
 - raw_text should contain as much visible text as possible.
-- Map roast_level to LIGHT_ROAST, MEDIUM_ROAST, DARK_ROAST, or UNKNOWN.
+- Map roast_level to one of: LIGHTROAST, MEDIUMROAST, DARKROAST, or UNKNOWN.
 - Return JSON only.
   `,
 });

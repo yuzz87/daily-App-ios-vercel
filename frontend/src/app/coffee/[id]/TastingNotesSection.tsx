@@ -2,24 +2,18 @@
 
 import { ChangeEvent, FormEvent, useState } from "react";
 import { apiFetch } from "@/lib/auth";
-
-export type TastingNote = {
-  id: number;
-  rating: number | null;
-  acidity: number | null;
-  bitterness: number | null;
-  sweetness: number | null;
-  aroma: number | null;
-  body: number | null;
-  memo: string | null;
-  brew_method: string | null;
-  grind_size: string | null;
-  water_temp: number | null;
-  coffee_grams: number | null;
-  water_grams: number | null;
-  brew_time: string | null;
-  created_at: string | null;
-};
+import type { TastingNote } from "../types";
+import {
+  formatDate,
+  formatValue,
+  getErrorMessage,
+  nullableString,
+} from "../utils";
+import {
+  buttonClasses,
+  inputClasses,
+  textareaClasses,
+} from "../styles";
 
 type TastingNoteForm = {
   rating: string;
@@ -126,7 +120,10 @@ export default function TastingNotesSection({
       );
 
       if (!res.ok) {
-        const message = await getErrorMessage(res);
+        const message = await getErrorMessage(
+          res,
+          "味メモの保存に失敗しました。"
+        );
         setErrorMessage(message);
         return;
       }
@@ -162,7 +159,7 @@ export default function TastingNotesSection({
                   }))
                 }
                 disabled={isSaving}
-                className="min-h-11 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
+                className={inputClasses}
               >
                 <option value="">-</option>
                 {[1, 2, 3, 4, 5].map((score) => (
@@ -188,7 +185,7 @@ export default function TastingNotesSection({
                 disabled={isSaving}
                 inputMode={field.inputMode}
                 placeholder={field.placeholder}
-                className="min-h-11 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
+                className={inputClasses}
               />
             </label>
           ))}
@@ -202,7 +199,7 @@ export default function TastingNotesSection({
             onChange={handleChange}
             disabled={isSaving}
             rows={5}
-            className="min-h-32 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
+            className={`min-h-32 ${textareaClasses}`}
           />
         </label>
 
@@ -219,7 +216,7 @@ export default function TastingNotesSection({
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
+            className={buttonClasses.primary}
           >
             {isSaving ? "保存中..." : "味メモを追加"}
           </button>
@@ -302,11 +299,6 @@ function toPayload(form: TastingNoteForm) {
   };
 }
 
-function nullableString(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function nullableNumber(value: string): number | null {
   const trimmed = value.trim();
 
@@ -316,44 +308,6 @@ function nullableNumber(value: string): number | null {
 
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-async function getErrorMessage(res: Response): Promise<string> {
-  try {
-    const data = await res.json();
-
-    if (Array.isArray(data.errors) && data.errors.length > 0) {
-      return data.errors.join("\n");
-    }
-
-    if (typeof data.error === "string") {
-      return data.error;
-    }
-  } catch {
-    return "味メモの保存に失敗しました。";
-  }
-
-  return "味メモの保存に失敗しました。";
-}
-
-function formatDate(value: string | null): string {
-  if (!value) {
-    return "-";
-  }
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  return String(value);
 }
 
 function NoteMetric({

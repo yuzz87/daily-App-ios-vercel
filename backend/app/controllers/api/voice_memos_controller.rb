@@ -1,16 +1,11 @@
-require "fileutils"
-require "securerandom"
-
 class Api::VoiceMemosController < ApplicationController
-  ALLOWED_AUDIO_CONTENT_TYPES = %w[
-    audio/webm
-    audio/mp4
-    audio/mpeg
-    audio/wav
-    audio/x-wav
-  ].freeze
-  ALLOWED_AUDIO_EXTENSIONS = %w[.webm .m4a .mp4 .mp3 .wav].freeze
-  MAX_AUDIO_SIZE = 50.megabytes
+  UPLOAD_VALIDATION = MediaUploadService::ValidationOptions.new(
+    allowed_extensions: %w[.webm .m4a .mp4 .mp3 .wav],
+    allowed_content_types: %w[audio/webm audio/mp4 audio/mpeg audio/wav audio/x-wav],
+    max_size: 50.megabytes,
+    invalid_type_message: "audio must be a WebM, M4A, MP3, or WAV file",
+    oversize_message: "audio must be 50MB or smaller"
+  ).freeze
 
   before_action :set_voice_memo, only: [:update, :destroy, :audio]
 
@@ -27,7 +22,7 @@ class Api::VoiceMemosController < ApplicationController
       return
     end
 
-    validation_errors = uploaded_audio_errors(audio)
+    validation_errors = MediaUploadService.validate(audio, options: UPLOAD_VALIDATION)
     if validation_errors.present?
       render json: { errors: validation_errors }, status: :unprocessable_entity
       return
@@ -102,20 +97,13 @@ class Api::VoiceMemosController < ApplicationController
   end
 
   def save_uploaded_audio(audio)
-    storage_dir = Rails.root.join("storage", "voice_memos")
-    FileUtils.mkdir_p(storage_dir)
+    saved = MediaUploadService.save(
+      audio,
+      directory: Rails.root.join("storage", "voice_memos"),
+      fallback_extension: extension_for_content_type(audio.content_type)
+    )
 
-    extension = File.extname(audio.original_filename.to_s).downcase
-    extension = extension_for_content_type(audio.content_type) if extension.blank?
-    filename = "#{SecureRandom.uuid}#{extension}"
-    path = storage_dir.join(filename)
-
-    File.binwrite(path, audio.read)
-
-    {
-      path: path.to_s,
-      url: filename
-    }
+    { path: saved[:path], url: saved[:filename] }
   end
 
   def resolve_audio_file_path(memo)
@@ -126,22 +114,6 @@ class Api::VoiceMemosController < ApplicationController
     else
       Rails.root.join("storage", "voice_memos", File.basename(memo.audio_url))
     end
-  end
-
-  def uploaded_audio_errors(audio)
-    errors = []
-    extension = File.extname(audio.original_filename.to_s).downcase
-    content_type = audio.content_type.to_s.split(";").first
-
-    unless ALLOWED_AUDIO_EXTENSIONS.include?(extension) && ALLOWED_AUDIO_CONTENT_TYPES.include?(content_type)
-      errors << "audio must be a WebM, M4A, MP3, or WAV file"
-    end
-
-    if audio.respond_to?(:size) && audio.size.to_i > MAX_AUDIO_SIZE
-      errors << "audio must be 50MB or smaller"
-    end
-
-    errors
   end
 
   def extension_for_content_type(content_type)

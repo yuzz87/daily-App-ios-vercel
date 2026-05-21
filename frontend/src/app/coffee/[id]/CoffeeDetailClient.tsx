@@ -5,33 +5,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/auth";
 import DeleteCoffeeBeanButton from "./DeleteCoffeeBeanButton";
-import TastingNotesSection, {
-  type TastingNote,
-} from "./TastingNotesSection";
-
-type CoffeeBean = {
-  id: number;
-  image_url: string | null;
-  brand: string | null;
-  code: string | null;
-  roast_level: string | null;
-  name: string | null;
-  country: string | null;
-  name_ja: string | null;
-  description_ja: string | null;
-  flavor_notes: string[] | null;
-  region: string | null;
-  process: string | null;
-  variety: string | null;
-  elevation: string | null;
-  farmer: string | null;
-  farm: string | null;
-  is_limited: boolean | null;
-  status: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  tasting_notes?: TastingNote[];
-};
+import TastingNotesSection from "./TastingNotesSection";
+import type { CoffeeBean } from "../types";
+import { buildImageUrl, formatDate, formatValue } from "../utils";
+import { buttonClasses } from "../styles";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -47,28 +24,6 @@ const detailFields: Array<{ label: string; value: keyof CoffeeBean }> = [
   { label: "Farmer", value: "farmer" },
   { label: "Farm", value: "farm" },
 ];
-
-function buildImageUrl(imageUrl: string | null): string | null {
-  if (!imageUrl) return null;
-  if (/^https?:\/\//.test(imageUrl)) return imageUrl;
-  if (!API_BASE_URL) return imageUrl;
-  return `${new URL(API_BASE_URL).origin}${imageUrl}`;
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "-";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  return String(value);
-}
 
 export default function CoffeeDetailClient({ id }: { id: string }) {
   const [coffeeBean, setCoffeeBean] = useState<CoffeeBean | null>(null);
@@ -128,7 +83,7 @@ export default function CoffeeDetailClient({ id }: { id: string }) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
               <Link
                 href={`/coffee/edit?id=${coffeeBean.id}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900"
+                className={buttonClasses.primary}
               >
                 編集する
               </Link>

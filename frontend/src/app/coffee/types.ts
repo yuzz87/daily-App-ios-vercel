@@ -1,0 +1,41 @@
+export type TastingNote = {
+  id: number;
+  rating: number | null;
+  acidity: number | null;
+  bitterness: number | null;
+  sweetness: number | null;
+  aroma: number | null;
+  body: number | null;
+  memo: string | null;
+  brew_method: string | null;
+  grind_size: string | null;
+  water_temp: number | null;
+  coffee_grams: number | null;
+  water_grams: number | null;
+  brew_time: string | null;
+  created_at: string | null;
+};
+
+export type CoffeeBean = {
+  id: number;
+  image_url: string | null;
+  brand: string | null;
+  code: string | null;
+  roast_level: string | null;
+  name: string | null;
+  country: string | null;
+  name_ja: string | null;
+  description_ja: string | null;
+  flavor_notes: string[] | null;
+  region: string | null;
+  process: string | null;
+  variety: string | null;
+  elevation: string | null;
+  farmer: string | null;
+  farm: string | null;
+  is_limited: boolean | null;
+  status: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  tasting_notes?: TastingNote[];
+};

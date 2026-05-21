@@ -108,7 +108,7 @@ module CoffeeBeans
         assert_equal "PostCoffee", result[:brand]
         assert_equal "IND-0416", result[:code]
         assert_equal "INDONESIA", result[:country]
-        assert_equal "Frinsa Estate", result[:farm]
+        assert_nil result[:farm]
         assert_nil result[:process]
         assert_nil result[:name]
         assert_equal [], result[:flavor_notes]

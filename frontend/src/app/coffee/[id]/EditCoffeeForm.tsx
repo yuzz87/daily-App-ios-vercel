@@ -4,26 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/auth";
-
-type CoffeeBean = {
-  id: number;
-  image_url: string | null;
-  brand: string | null;
-  code: string | null;
-  roast_level: string | null;
-  name: string | null;
-  country: string | null;
-  name_ja: string | null;
-  description_ja: string | null;
-  flavor_notes: string[] | null;
-  region: string | null;
-  process: string | null;
-  variety: string | null;
-  elevation: string | null;
-  farmer: string | null;
-  farm: string | null;
-  is_limited: boolean | null;
-};
+import type { CoffeeBean } from "../types";
+import {
+  buildImageUrl,
+  getErrorMessage,
+  nullableString,
+} from "../utils";
+import {
+  buttonClasses,
+  inputClasses,
+  textareaClasses,
+} from "../styles";
 
 type CoffeeBeanForm = {
   brand: string;
@@ -100,12 +91,10 @@ export default function EditCoffeeForm({
     API_BASE_URL ? null : "NEXT_PUBLIC_API_BASE_URL is not defined."
   );
 
-  const imageUrl = useMemo(() => {
-    if (!coffeeBean?.image_url) return null;
-    if (/^https?:\/\//.test(coffeeBean.image_url)) return coffeeBean.image_url;
-    if (!API_BASE_URL) return coffeeBean.image_url;
-    return `${new URL(API_BASE_URL).origin}${coffeeBean.image_url}`;
-  }, [coffeeBean]);
+  const imageUrl = useMemo(
+    () => buildImageUrl(coffeeBean?.image_url ?? null),
+    [coffeeBean]
+  );
 
   useEffect(() => {
     if (!API_BASE_URL) return;
@@ -239,7 +228,7 @@ export default function EditCoffeeForm({
                         onChange={handleTextChange}
                         disabled={isSaving}
                         rows={field.name === "flavor_notes" ? 4 : 5}
-                        className="min-h-28 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
+                        className={`min-h-28 ${textareaClasses}`}
                       />
                     ) : (
                       <input
@@ -247,7 +236,7 @@ export default function EditCoffeeForm({
                         value={form[field.name]}
                         onChange={handleTextChange}
                         disabled={isSaving}
-                        className="min-h-11 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
+                        className={inputClasses}
                       />
                     )}
                     {field.name === "flavor_notes" ? (
@@ -273,14 +262,14 @@ export default function EditCoffeeForm({
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <Link
                   href={`/coffee/detail?id=${coffeeBeanId}`}
-                  className="inline-flex min-h-11 items-center justify-center rounded-md border border-stone-300 px-4 text-sm font-semibold text-gray-700 transition hover:bg-stone-50"
+                  className={buttonClasses.secondary}
                 >
                   Cancel
                 </Link>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
+                  className={buttonClasses.primary}
                 >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
@@ -333,18 +322,3 @@ function toPayload(form: CoffeeBeanForm) {
   };
 }
 
-function nullableString(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-async function getErrorMessage(res: Response, fallbackMessage: string): Promise<string> {
-  try {
-    const data = await res.json();
-    if (Array.isArray(data.errors) && data.errors.length > 0) return data.errors.join("\n");
-    if (typeof data.error === "string") return data.error;
-  } catch {
-    return fallbackMessage;
-  }
-  return fallbackMessage;
-}

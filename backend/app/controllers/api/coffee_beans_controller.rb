@@ -1,10 +1,11 @@
-require "fileutils"
-require "securerandom"
-
 class Api::CoffeeBeansController < ApplicationController
-  ALLOWED_IMAGE_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
-  ALLOWED_IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .webp].freeze
-  MAX_IMAGE_SIZE = 10.megabytes
+  UPLOAD_VALIDATION = MediaUploadService::ValidationOptions.new(
+    allowed_extensions: %w[.jpg .jpeg .png .webp],
+    allowed_content_types: %w[image/jpeg image/png image/webp],
+    max_size: 10.megabytes,
+    invalid_type_message: "image must be a JPEG, PNG, or WebP file",
+    oversize_message: "image must be 10MB or smaller"
+  ).freeze
 
   before_action :set_coffee_bean, only: [:show, :update, :destroy]
 
@@ -28,7 +29,7 @@ class Api::CoffeeBeansController < ApplicationController
         return
       end
 
-      validation_errors = uploaded_image_errors(image)
+      validation_errors = MediaUploadService.validate(image, options: UPLOAD_VALIDATION)
       if validation_errors.present?
         render json: { errors: validation_errors }, status: :unprocessable_entity
         return
@@ -52,7 +53,7 @@ class Api::CoffeeBeansController < ApplicationController
       return
     end
 
-    validation_errors = uploaded_image_errors(image)
+    validation_errors = MediaUploadService.validate(image, options: UPLOAD_VALIDATION)
     if validation_errors.present?
       render json: { errors: validation_errors }, status: :unprocessable_entity
       return
@@ -112,42 +113,21 @@ class Api::CoffeeBeansController < ApplicationController
   end
 
   def save_uploaded_image(image)
-    upload_dir = Rails.root.join("public", "uploads", "coffee_beans")
-    FileUtils.mkdir_p(upload_dir)
-
-    extension = File.extname(image.original_filename.to_s).downcase
-    filename = "#{SecureRandom.uuid}#{extension}"
-    path = upload_dir.join(filename)
-
-    File.binwrite(path, image.read)
+    saved = MediaUploadService.save(
+      image,
+      directory: Rails.root.join("public", "uploads", "coffee_beans")
+    )
 
     # Cloudinary credentials が設定されている場合は永続ストレージにアップロード
     if ENV["CLOUDINARY_CLOUD_NAME"].present?
       result = Cloudinary::Uploader.upload(
-        path.to_s,
+        saved[:path],
         folder: "coffee_beans",
         resource_type: "image"
       )
-      { path: path.to_s, url: result["secure_url"] }
+      { path: saved[:path], url: result["secure_url"] }
     else
-      { path: path.to_s, url: "/uploads/coffee_beans/#{filename}" }
+      { path: saved[:path], url: "/uploads/coffee_beans/#{saved[:filename]}" }
     end
   end
-
-  def uploaded_image_errors(image)
-    errors = []
-    extension = File.extname(image.original_filename.to_s).downcase
-    content_type = image.content_type.to_s
-
-    unless ALLOWED_IMAGE_EXTENSIONS.include?(extension) && ALLOWED_IMAGE_CONTENT_TYPES.include?(content_type)
-      errors << "image must be a JPEG, PNG, or WebP file"
-    end
-
-    if image.respond_to?(:size) && image.size.to_i > MAX_IMAGE_SIZE
-      errors << "image must be 10MB or smaller"
-    end
-
-    errors
-  end
-
 end
