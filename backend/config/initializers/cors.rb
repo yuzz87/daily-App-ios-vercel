@@ -7,7 +7,7 @@ allowed_origins = (
   [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://yuzz87.github.io"
+    "https://pwa-test-daily-v1.vercel.app/"
   ]
 ).uniq
 
