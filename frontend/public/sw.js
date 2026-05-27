@@ -1,12 +1,6 @@
-const CACHE_NAME = "daily-app-v1";
-const BASE_PATH = "/PWA-Test-daily-v1";
+const CACHE_NAME = "daily-app-v2";
 
-const APP_SHELL = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/timer`,
-  `${BASE_PATH}/coffee`,
-  `${BASE_PATH}/memo`,
-];
+const APP_SHELL = ["/", "/timer", "/coffee", "/memo"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
