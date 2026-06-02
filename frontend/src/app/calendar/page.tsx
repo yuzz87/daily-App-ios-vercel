@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
 import { useCalendarEvents } from "./hooks/useCalendarEvents";
 import { useCalendarNavigation } from "./hooks/useCalendarNavigation";
 import { useEventForm } from "./hooks/useEventForm";
@@ -22,10 +21,13 @@ const VIEW_MODE_OPTIONS: { label: string; value: CalendarViewMode }[] = [
 
 export default function CalendarPage() {
   const today = new Date();
+
+  // 画面上部の検索欄、サイドバー表示、表示モードを管理するUI状態
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
 
+  // カレンダーの日付移動、イベント取得、イベントフォーム、検索結果をそれぞれ専用hookに分離
   const navigation = useCalendarNavigation(today);
   const { events, setEvents, holidayMap } = useCalendarEvents(
     navigation.currentYear,
@@ -37,6 +39,8 @@ export default function CalendarPage() {
     setEvents,
   });
   const filteredEvents = useFilteredEvents(events, searchKeyword);
+
+  // サイドバーなどで使うイベント一覧は開始日時順に並べる
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) =>
       a.start_at.localeCompare(b.start_at)
@@ -44,6 +48,8 @@ export default function CalendarPage() {
   }, [filteredEvents]);
 
   const weekLikeDayCount = 7;
+
+  // 年間表示などに使えるよう、月ごとのイベント件数を集計する
   const yearMonths = Array.from({ length: 12 }, (_, monthIndex) => {
     const monthEvents = sortedEvents.filter((event) => {
       const eventDate = new Date(event.start_at);
@@ -60,11 +66,13 @@ export default function CalendarPage() {
     };
   });
 
+  // 日付移動時は、編集中のモーダルを閉じてから移動する
   function runNavigation(action: () => void) {
     eventForm.closeModal();
     action();
   }
 
+  // 現在の表示モードに合わせて、前の週または前の月へ移動する
   function goToPrevPeriod() {
     runNavigation(() => {
 
@@ -78,6 +86,7 @@ export default function CalendarPage() {
     });
   }
 
+  // 現在の表示モードに合わせて、次の週または次の月へ移動する
   function goToNextPeriod() {
     runNavigation(() => {
 
@@ -114,6 +123,7 @@ export default function CalendarPage() {
           {isSidebarOpen && (
             <aside className="min-h-0 overflow-auto lg:basis-[30%] lg:shrink-0 lg:border-r lg:border-gray-200">
 
+              {/* サイドバーにはミニカレンダーと直近イベント一覧を表示する */}
               <div className="mt-4">
                 <SidebarCalendar
                   calendarDays={navigation.calendarDays}
@@ -134,7 +144,8 @@ export default function CalendarPage() {
             </aside>
           )}
 
-          <section className="flex min-h-0 w-full flex-col bg-white p-2 shadow-sm sm:p-3 lg:basis-[70%] lg:shrink-0">
+          <section className="flex min-h-0 w-full flex-col bg-white p-1 shadow-sm sm:p-2 lg:basis-[70%] lg:shrink-0">
+            {/* 表示モード切り替えと、前・今日・次の移動ボタン */}
             <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2">
               <div className="flex max-w-full gap-1 overflow-x-auto rounded-md border border-gray-300 bg-gray-50 p-1">
                 {VIEW_MODE_OPTIONS.map((option) => (
@@ -178,6 +189,7 @@ export default function CalendarPage() {
               </div>
             </div>
 
+            {/* 週表示 */}
             {(viewMode === "week") && (
               <WeekCalendarView
                 selectedDate={navigation.selectedDate}
@@ -191,8 +203,9 @@ export default function CalendarPage() {
               />
             )}
 
+            {/* 月表示。月表示は内容が大きくなるため、この領域だけスクロールさせる */}
             {viewMode === "month" && (
-              <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-white p-3">
+              <div className="calendar-month-panel">
                 <CalendarGrid
                   calendarDays={navigation.calendarDays}
                   holidayMap={holidayMap}
@@ -209,6 +222,7 @@ export default function CalendarPage() {
           </section>
         </div>
 
+        {/* イベント作成・編集・削除用モーダル */}
         <EventModal
           isOpen={eventForm.isModalOpen}
           editingEventId={eventForm.editingEventId}
