@@ -1,6 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { updateCalendarEvent } from "./api";
 import { useCalendarEvents } from "./hooks/useCalendarEvents";
 import { useCalendarNavigation } from "./hooks/useCalendarNavigation";
 import { useEventForm } from "./hooks/useEventForm";
@@ -11,6 +19,8 @@ import CalendarHeader from "./components/navigation/CalendarHeader";
 import SidebarCalendar from "./components/navigation/SidebarCalendar";
 import SidebarUpcomingEvents from "./components/navigation/SidebarUpcomingEvents";
 import WeekCalendarView from "./components/week/WeekCalendarView";
+
+const DRAGGABLE_EVENT_PREFIX = "event-";
 
 type CalendarViewMode = "week" | "month";
 
@@ -39,6 +49,53 @@ export default function CalendarPage() {
     setEvents,
   });
   const filteredEvents = useFilteredEvents(events, searchKeyword);
+
+  // ドラッグ判定: ポインタが 5px 以上動いてから drag 開始（クリックを潰さない）
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  // ドラッグでイベントを別の日に移動する。
+  // 仕様: start_at の日付部分のみドロップ先に置き換え、時刻と end_at はそのまま。
+  // 楽観的更新 → 失敗時はロールバック。
+  async function handleDragEnd(dragEvent: DragEndEvent) {
+    const { active, over } = dragEvent;
+    if (!over) return;
+
+    const activeIdString = String(active.id);
+    if (!activeIdString.startsWith(DRAGGABLE_EVENT_PREFIX)) return;
+
+    const eventId = Number(activeIdString.slice(DRAGGABLE_EVENT_PREFIX.length));
+    const newDateString = String(over.id);
+
+    const targetEvent = events.find((e) => e.id === eventId);
+    if (!targetEvent) return;
+
+    const currentDateString = targetEvent.start_at.slice(0, 10);
+    if (currentDateString === newDateString) return;
+
+    const newStartAt = `${newDateString}${targetEvent.start_at.slice(10)}`;
+    const optimisticEvent = { ...targetEvent, start_at: newStartAt };
+
+    setEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? optimisticEvent : e))
+    );
+
+    try {
+      const saved = await updateCalendarEvent(eventId, {
+        title: targetEvent.title,
+        description: targetEvent.description || "",
+        start_at: newStartAt,
+        end_at: targetEvent.end_at || "",
+        all_day: targetEvent.all_day,
+        color: targetEvent.color || "",
+      });
+      setEvents((prev) => prev.map((e) => (e.id === eventId ? saved : e)));
+    } catch (error) {
+      console.error(error);
+      setEvents((prev) => prev.map((e) => (e.id === eventId ? targetEvent : e)));
+    }
+  }
 
   // サイドバーなどで使うイベント一覧は開始日時順に並べる
   const sortedEvents = useMemo(() => {
@@ -101,6 +158,7 @@ export default function CalendarPage() {
   }
 
   return (
+    <DndContext sensors={dndSensors} onDragEnd={handleDragEnd}>
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <header>
         <CalendarHeader
@@ -252,5 +310,6 @@ export default function CalendarPage() {
         />
       </main>
     </div>
+    </DndContext>
   );
 }

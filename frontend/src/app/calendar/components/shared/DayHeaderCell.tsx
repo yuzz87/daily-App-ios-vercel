@@ -37,7 +37,7 @@ export default function DayHeaderCell({
       <button
         type="button"
         onClick={() => onDateClick(dateString)}
-        className={`h-full border-r px-1 py-1 text-center hover:bg-[#9e9eff]/30 ${
+        className={`h-full rounded px-1 py-1 text-center hover:bg-[#9e9eff]/30 ${
           isToday ? "bg-blue-50" : ""
         }`}
       >

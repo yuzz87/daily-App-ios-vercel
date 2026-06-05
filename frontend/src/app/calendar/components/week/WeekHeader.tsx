@@ -1,7 +1,4 @@
-import type { CalendarEvent } from "../../types";
-import type { EventSegment } from "../../utils/eventSegments";
 import DayHeaderCell from "../shared/DayHeaderCell";
-import WeekAllDayBars from "./WeekAllDayBars";
 
 type WeekDay = {
   dateString: string;
@@ -14,14 +11,7 @@ type WeekHeaderProps = {
   holidayMap: Map<string, string>;
   todayString: string;
   dayCount: number;
-  headerHeight: number;
-  segments: EventSegment[];
-  editingEventId: number | null;
-  dayHeaderHeight: number;
-  eventBarHeight: number;
-  eventBarGap: number;
   onDateClick: (dateString: string) => void;
-  onEventClick: (event: CalendarEvent) => void;
 };
 
 export default function WeekHeader({
@@ -29,27 +19,14 @@ export default function WeekHeader({
   holidayMap,
   todayString,
   dayCount,
-  headerHeight,
-  segments,
-  editingEventId,
-  dayHeaderHeight,
-  eventBarHeight,
-  eventBarGap,
   onDateClick,
-  onEventClick,
 }: WeekHeaderProps) {
   return (
-    <div
-      className="sticky top-0 z-20 border-b bg-white"
-      style={{
-        height: headerHeight,
-      }}
-    >
+    <div className="sticky top-0 z-20 bg-white pb-2">
       <div
-        className="grid"
+        className="grid gap-x-1"
         style={{
           gridTemplateColumns: `repeat(${dayCount}, minmax(96px, 1fr))`,
-          height: dayHeaderHeight,
         }}
       >
         {weekDays.map((weekDay) => (
@@ -64,17 +41,6 @@ export default function WeekHeader({
             onDateClick={onDateClick}
           />
         ))}
-      </div>
-
-      <div className="relative" style={{ height: headerHeight - dayHeaderHeight }}>
-        <WeekAllDayBars
-          segments={segments}
-          dayCount={dayCount}
-          editingEventId={editingEventId}
-          eventBarHeight={eventBarHeight}
-          eventBarGap={eventBarGap}
-          onEventClick={onEventClick}
-        />
       </div>
     </div>
   );
