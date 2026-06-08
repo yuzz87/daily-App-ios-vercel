@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { ClientAuthGuard } from "./components/ClientAuthGuard";
 import Footer from "./components/Footer";
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
-import { StopwatchProvider } from "./components/StopwatchProvider";
 import { publicUrl } from "@/lib/publicPath";
 import "./globals.css";
 
@@ -26,14 +25,12 @@ export default function Layout({
       </head>
       <body className="overflow-hidden">
         <ServiceWorkerRegistration />
-        <StopwatchProvider>
-          <ClientAuthGuard>
-            <div className="flex h-screen flex-col overflow-hidden">
-              <div className="min-h-0 flex-1 overflow-hidden pb-20">{children}</div>
-              <Footer />
-            </div>
-          </ClientAuthGuard>
-        </StopwatchProvider>
+        <ClientAuthGuard>
+          <div className="flex h-screen flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-hidden pb-20">{children}</div>
+            <Footer />
+          </div>
+        </ClientAuthGuard>
       </body>
     </html>
   );

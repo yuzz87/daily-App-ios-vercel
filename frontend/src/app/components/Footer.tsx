@@ -21,16 +21,6 @@ const footerLinks = [
     label: "コーヒー",
     icon: "/coffee.svg",
   },
-  {
-    href: "/prediction",
-    label: "予測",
-    icon: "/database-zap.svg",
-  },
-  {
-    href: "/timer",
-    label: "ストップウォッチ",
-    icon: "/hourglass.svg",
-  },
 ];
 
 export default function Footer() {
@@ -42,7 +32,7 @@ export default function Footer() {
     <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
       <nav
         aria-label="フッターナビゲーション"
-        className="mx-auto grid max-w-3xl grid-cols-5 px-2 py-2"
+        className="mx-auto grid max-w-3xl grid-cols-3 px-2 py-2"
       >
         {footerLinks.map((link) => {
           const isActive =
