@@ -19,6 +19,9 @@ export type CalendarEvent = {
   color: string | null;
 };
 
+/** カレンダーの表示モード（週 / 月） */
+export type CalendarViewMode = "week" | "month";
+
 /** 月表示カレンダーの1日セル。月初・月末の空白セルも含む */
 export type CalendarDay = {
   /** YYYY-MM-DD。空白セルでは null */

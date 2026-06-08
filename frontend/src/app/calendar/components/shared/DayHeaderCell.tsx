@@ -67,7 +67,7 @@ export default function DayHeaderCell({
     <button
       type="button"
       onClick={() => onDateClick(dateString)}
-      className={`relative min-h-28 border-b border-r text-center hover:bg-[#9e9eff]/30 ${
+      className={`relative block h-full w-full min-h-28 border-b border-r text-center hover:bg-[#9e9eff]/30 ${
         isHoliday ? "bg-red-50" : "bg-white"
       } ${isToday ? "ring-2 ring-inset ring-blue-400" : ""}`}
     >

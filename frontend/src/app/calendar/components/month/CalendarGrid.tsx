@@ -18,6 +18,10 @@ const MIN_WEEK_HEIGHT = 112;
 const DATE_AREA_HEIGHT = 64;
 const EVENT_BAR_HEIGHT = 20;
 const EVENT_BAR_GAP = 1;
+// 1 マスに表示する予定バーの最大レーン数。超えた分は各日に「+X」で集約する。
+const MAX_VISIBLE_LANES = 3;
+// 「+X」表示用に確保する行の高さ。
+const MORE_ROW_HEIGHT = 18;
 
 function chunkWeeks(calendarDays: CalendarDay[]) {
   const paddedDays = [...calendarDays];
@@ -74,6 +78,8 @@ export default function CalendarGrid({
             dateAreaHeight={DATE_AREA_HEIGHT}
             eventBarHeight={EVENT_BAR_HEIGHT}
             eventBarGap={EVENT_BAR_GAP}
+            maxVisibleLanes={MAX_VISIBLE_LANES}
+            moreRowHeight={MORE_ROW_HEIGHT}
             onDateClick={onDateClick}
             onEventClick={onEventClick}
           />

@@ -39,7 +39,7 @@ export async function apiFetch(
     },
   });
 
-  if (res.status === 401) {
+  if (res.status === 401 && process.env.NODE_ENV === "production") {
     removeToken();
     if (typeof window !== "undefined" && window.location.pathname !== `${BASE_PATH}/login`) {
       window.location.href = `${BASE_PATH}/login`;

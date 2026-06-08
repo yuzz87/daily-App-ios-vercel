@@ -1,7 +1,5 @@
 "use client";
 
-import { useDroppable } from "@dnd-kit/core";
-
 import type { CalendarEvent } from "../../types";
 import { isMultiDayEvent } from "../../utils/eventSegments";
 import { formatDate } from "../../utils/date";
@@ -20,27 +18,18 @@ type WeekCalendarViewProps = {
 };
 
 type WeekDayColumnProps = {
-  dateString: string;
   events: CalendarEvent[];
   editingEventId: number | null;
   onEventClick: (event: CalendarEvent) => void;
 };
 
 function WeekDayColumn({
-  dateString,
   events,
   editingEventId,
   onEventClick,
 }: WeekDayColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: dateString });
-
   return (
-    <div
-      ref={setNodeRef}
-      className={`flex flex-col gap-1 rounded p-1 transition-colors ${
-        isOver ? "bg-blue-50" : ""
-      }`}
-    >
+    <div className="flex flex-col gap-1 rounded p-1">
       {events.map((event) => (
         <WeekEventBlock
           key={event.id}
@@ -123,7 +112,6 @@ export default function WeekCalendarView({
         {weekDays.map((weekDay) => (
           <WeekDayColumn
             key={weekDay.dateString}
-            dateString={weekDay.dateString}
             events={eventsByDate.get(weekDay.dateString) || []}
             editingEventId={editingEventId}
             onEventClick={onEventClick}

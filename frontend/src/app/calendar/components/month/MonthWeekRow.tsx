@@ -1,8 +1,5 @@
 import type { CalendarDay, CalendarEvent } from "../../types";
-import {
-  createEventSegments,
-  getSegmentLaneCount,
-} from "../../utils/eventSegments";
+import { createEventSegments } from "../../utils/eventSegments";
 import MonthDayCell from "./MonthDayCell";
 import MonthEventBars from "./MonthEventBars";
 
@@ -17,6 +14,8 @@ type MonthWeekRowProps = {
   dateAreaHeight: number;
   eventBarHeight: number;
   eventBarGap: number;
+  maxVisibleLanes: number;
+  moreRowHeight: number;
   onDateClick: (dateString: string) => void;
   onEventClick: (event: CalendarEvent) => void;
 };
@@ -32,6 +31,8 @@ export default function MonthWeekRow({
   dateAreaHeight,
   eventBarHeight,
   eventBarGap,
+  maxVisibleLanes,
+  moreRowHeight,
   onDateClick,
   onEventClick,
 }: MonthWeekRowProps) {
@@ -39,10 +40,13 @@ export default function MonthWeekRow({
     week.map((day) => day.dateString),
     events
   );
-  const laneCount = getSegmentLaneCount(segments);
+  // 行の高さは予定数に依らず固定（最大レーン数 + 「+X」行ぶん）。マス内に収める。
   const weekHeight = Math.max(
     minWeekHeight,
-    dateAreaHeight + laneCount * (eventBarHeight + eventBarGap) + 12
+    dateAreaHeight +
+      maxVisibleLanes * (eventBarHeight + eventBarGap) +
+      moreRowHeight +
+      8
   );
 
   return (
@@ -72,6 +76,8 @@ export default function MonthWeekRow({
         eventBarHeight={eventBarHeight}
         eventBarGap={eventBarGap}
         dateAreaHeight={dateAreaHeight}
+        maxVisibleLanes={maxVisibleLanes}
+        moreRowHeight={moreRowHeight}
         onEventClick={onEventClick}
       />
     </div>

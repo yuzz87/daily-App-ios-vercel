@@ -3,6 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { publicUrl } from "@/lib/publicPath";
+import type { CalendarViewMode } from "../../types";
+
+const VIEW_MODE_OPTIONS: { label: string; value: CalendarViewMode }[] = [
+  { label: "週", value: "week" },
+  { label: "月", value: "month" },
+];
 
 type CalendarHeaderProps = {
   currentYear: number;
@@ -10,9 +16,11 @@ type CalendarHeaderProps = {
   searchKeyword: string;
   onChangeKeyword: (value: string) => void;
   onClearKeyword: () => void;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
+  onPrev: () => void;
+  onNext: () => void;
   onToday: () => void;
+  viewMode: CalendarViewMode;
+  onChangeViewMode: (mode: CalendarViewMode) => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   onCreateEvent: () => void;
@@ -23,9 +31,11 @@ export default function CalendarHeader({
   currentMonth,
   searchKeyword,
   onChangeKeyword,
-  onPrevMonth,
-  onNextMonth,
+  onPrev,
+  onNext,
   onToday,
+  viewMode,
+  onChangeViewMode,
   isSidebarOpen,
   onToggleSidebar,
   onCreateEvent,
@@ -63,8 +73,8 @@ export default function CalendarHeader({
           </div>
         ) : (
           <div className="flex w-full items-center justify-between gap-3">
-            {/* 左側：サイドバー切り替え */}
-            <div className="flex justify-between gap-2 sm:order-1">
+            {/* 左側：サイドバー切り替え ＋ 週/月 表示モード切替 */}
+            <div className="flex items-center gap-2 sm:order-1">
               <button
                 type="button"
                 onClick={onToggleSidebar}
@@ -79,6 +89,24 @@ export default function CalendarHeader({
                   height={30}
                 />
               </button>
+
+              {/* ハンバーガーの右隣に週/月の表示モード切替 */}
+              <div className="flex gap-1 rounded-md border border-gray-300 bg-gray-50 p-1">
+                {VIEW_MODE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onChangeViewMode(option.value)}
+                    className={`shrink-0 rounded px-3 py-1.5 text-sm ${
+                      viewMode === option.value
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-700 hover:bg-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 中央：今日・年月・月移動 */}
@@ -98,9 +126,9 @@ export default function CalendarHeader({
               <div className="flex gap-1">
                 <button
                   type="button"
-                  onClick={onPrevMonth}
-                  aria-label="前の月"
-                  title="前の月"
+                  onClick={onPrev}
+                  aria-label="前へ"
+                  title="前へ"
                   className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
                 >
                   <Image
@@ -113,9 +141,9 @@ export default function CalendarHeader({
 
                 <button
                   type="button"
-                  onClick={onNextMonth}
-                  aria-label="次の月"
-                  title="次の月"
+                  onClick={onNext}
+                  aria-label="次へ"
+                  title="次へ"
                   className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
                 >
                   <Image
