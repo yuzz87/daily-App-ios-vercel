@@ -1,7 +1,6 @@
 # Daily Life App ポートフォリオ
 
 ## 実装画面
-
 <table>
   <tr>
     <td align="center" width="50%">
@@ -15,8 +14,11 @@
     </td>
 
     <td align="center" width="50%">
-<img width="1256" height="864" alt="image" src="https://github.com/user-attachments/assets/78d59966-642d-4241-991b-4750b33a49e6" />
-
+      <img
+        width="100%"
+        alt="voicememo"
+        src="https://github.com/user-attachments/assets/78d59966-642d-4241-991b-4750b33a49e6"
+      />
       <br />
       ボイスメモ画面
     </td>
@@ -34,7 +36,6 @@
     </td>
   </tr>
 </table>
-
 
 ## 1. 概要
 
