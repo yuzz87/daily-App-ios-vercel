@@ -1,7 +1,7 @@
 # Daily Life App ポートフォリオ
 
+<img width="1630" height="870" alt="image" src="https://github.com/user-attachments/assets/159faa61-3e25-441f-a714-2dd8db577404" />
 
-画像の挿入
 ## 1. 概要
 
 Daily Life App は、日常の予定管理、音声メモ、コーヒー豆記録を扱う個人向け PWA アプリケーションです。
