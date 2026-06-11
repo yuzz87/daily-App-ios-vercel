@@ -15,11 +15,8 @@
     </td>
 
     <td align="center" width="50%">
-      <img
-        width="100%"
-        alt="voicememo"
-        src="https://github.com/user-attachments/assets/159faa61-3e25-441f-a714-2dd8db577404"
-      />
+<img width="1256" height="864" alt="image" src="https://github.com/user-attachments/assets/78d59966-642d-4241-991b-4750b33a49e6" />
+
       <br />
       ボイスメモ画面
     </td>
