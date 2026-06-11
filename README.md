@@ -1,6 +1,28 @@
 # Daily Life App ポートフォリオ
 
-<img width="1630" height="870" alt="image" src="https://github.com/user-attachments/assets/159faa61-3e25-441f-a714-2dd8db577404" />
+## 実装画面
+
+<table>
+  <tr>
+    <td align="center">
+      <img width="100%" alt="calendar" src="https://github.com/user-attachments/assets/8712f744-dd7c-4a39-9cb1-a3be4b5b355c" />
+      <br />
+      カレンダー画面
+    </td>
+  <tr>
+    <td align="center" colspan="2">
+      <img width="50%" alt="voicememo" src="[https://github.com/user-attachments/assets/3de4b6d8-e211-4641-86be-7a546e0eba74](https://github.com/user-attachments/assets/159faa61-3e25-441f-a714-2dd8db577404)" />
+      <br />
+      ボイスメモ画面
+    </td>
+  </tr>
+        <td align="center">
+      <img width="100%" alt="coffee" src="https://github.com/user-attachments/assets/a562f35e-638c-4c38-9d22-4a55fed61942" />
+      <br />
+      コーヒー画像登録画面
+    </td>
+</table>
+
 
 ## 1. 概要
 
