@@ -4,7 +4,7 @@
 
 <table>
   <tr>
-    <td align="center" width="50%">
+    <td align="center">
       <img
         width="100%"
         alt="calendar"
@@ -13,8 +13,10 @@
       <br />
       カレンダー画面
     </td>
+  </tr>
 
-    <td align="center" width="50%">
+  <tr>
+    <td align="center">
       <img
         width="100%"
         alt="voicememo"
@@ -26,9 +28,9 @@
   </tr>
 
   <tr>
-    <td align="center" colspan="2">
+    <td align="center">
       <img
-        width="70%"
+        width="100%"
         alt="coffee"
         src="https://github.com/user-attachments/assets/a562f35e-638c-4c38-9d22-4a55fed61942"
       />
