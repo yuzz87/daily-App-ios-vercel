@@ -2,19 +2,19 @@ class Api::EventsController < ApplicationController
   before_action :set_event, only: [:show, :update, :destroy]
 
   def index
-    events = Event.order(:start_at)
+    events = current_user.events.order(:start_at)
 
     if params[:year].present? && params[:month].present?
-      year = params[:year].to_i
-      month = params[:month].to_i
-
-      start_date = Time.zone.local(year, month, 1).beginning_of_day
-      end_date = start_date.end_of_month.end_of_day
+      month_range = requested_month_range
+      if month_range.nil?
+        render json: { error: "year and month are invalid." }, status: :bad_request
+        return
+      end
 
       events = events.where(
         "start_at <= ? AND end_at >= ?",
-        end_date,
-        start_date
+        month_range.end,
+        month_range.begin
       )
     end
 
@@ -26,7 +26,7 @@ class Api::EventsController < ApplicationController
   end
 
   def create
-    event = Event.new(event_params)
+    event = current_user.events.build(event_params)
 
     if event.save
       render json: event.as_json_for_api, status: :created
@@ -51,7 +51,7 @@ class Api::EventsController < ApplicationController
   private
 
   def set_event
-    @event = Event.find(params[:id])
+    @event = current_user.events.find(params[:id])
   end
 
   def event_params
@@ -63,5 +63,16 @@ class Api::EventsController < ApplicationController
       :all_day,
       :color
     )
+  end
+
+  def requested_month_range
+    year = Integer(params[:year], exception: false)
+    month = Integer(params[:month], exception: false)
+
+    return nil unless year&.between?(1900, 2100)
+    return nil unless month&.between?(1, 12)
+
+    start_date = Time.zone.local(year, month, 1).beginning_of_day
+    start_date..start_date.end_of_month.end_of_day
   end
 end

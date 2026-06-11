@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useCalendarEvents } from "./hooks/useCalendarEvents";
 import { useCalendarNavigation } from "./hooks/useCalendarNavigation";
 import { useEventForm } from "./hooks/useEventForm";
@@ -35,31 +35,9 @@ export default function CalendarPage() {
   const filteredEvents = useFilteredEvents(events, searchKeyword);
 
   // サイドバーなどで使うイベント一覧は開始日時順に並べる
-  const sortedEvents = useMemo(() => {
-    return [...filteredEvents].sort((a, b) =>
-      a.start_at.localeCompare(b.start_at)
-    );
-  }, [filteredEvents]);
-
   const weekLikeDayCount = 7;
 
   // 年間表示などに使えるよう、月ごとのイベント件数を集計する
-  const yearMonths = Array.from({ length: 12 }, (_, monthIndex) => {
-    const monthEvents = sortedEvents.filter((event) => {
-      const eventDate = new Date(event.start_at);
-
-      return (
-        eventDate.getFullYear() === navigation.currentYear &&
-        eventDate.getMonth() === monthIndex
-      );
-    });
-
-    return {
-      monthIndex,
-      eventCount: monthEvents.length,
-    };
-  });
-
   // 日付移動時は、編集中のモーダルを閉じてから移動する
   function runNavigation(action: () => void) {
     eventForm.closeModal();

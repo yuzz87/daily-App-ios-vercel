@@ -8,17 +8,17 @@ import { publicUrl } from "@/lib/publicPath";
 const footerLinks = [
   {
     href: "/calendar",
-    label: "カレンダー",
+    label: "Calendar",
     icon: "/calendar-heart.svg",
   },
   {
     href: "/taskmemo",
-    label: "メモ",
-    icon: "/notebook-pen.svg",
+    label: "Memo",
+    icon: "/mic.svg",
   },
   {
     href: "/coffee",
-    label: "コーヒー",
+    label: "Coffee",
     icon: "/coffee.svg",
   },
 ];
@@ -31,7 +31,7 @@ export default function Footer() {
   return (
     <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
       <nav
-        aria-label="フッターナビゲーション"
+        aria-label="Footer navigation"
         className="mx-auto grid max-w-3xl grid-cols-3 px-2 py-2"
       >
         {footerLinks.map((link) => {

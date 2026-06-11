@@ -1,10 +1,8 @@
-import { apiFetch } from "@/lib/auth";
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 import type { CalendarEvent, Holiday } from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-// NEXT_PUBLIC_API_BASE_URL 未設定のときはローカル確認用のモックモード
-const IS_MOCK_MODE = !API_BASE_URL;
+// Set NEXT_PUBLIC_DISABLE_API=true to use local mock data.
+const IS_MOCK_MODE = process.env.NEXT_PUBLIC_DISABLE_API === "true";
 
 type EventPayload = {
   title: string;

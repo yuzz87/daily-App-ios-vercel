@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import { apiFetch } from "@/lib/auth";
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 import type { TastingNote } from "../types";
 import {
   formatDate,
@@ -32,8 +32,6 @@ type TastingNoteForm = {
 };
 
 type FieldName = keyof TastingNoteForm;
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const emptyForm: TastingNoteForm = {
   rating: "",
@@ -99,11 +97,6 @@ export default function TastingNotesSection({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!API_BASE_URL) {
-      setErrorMessage("NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-      return;
-    }
 
     setIsSaving(true);
     setErrorMessage(null);

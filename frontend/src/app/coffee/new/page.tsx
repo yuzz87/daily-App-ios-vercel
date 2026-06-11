@@ -4,13 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import { apiFetch } from "@/lib/auth";
-
-type AnalyzeMode = "legacy" | "mastra";
-
-type LegacyAnalyzeResponse = {
-  id?: number;
-};
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 
 type CoffeeBeanAnalyzeResult = {
   brand: string | null;
@@ -31,25 +25,6 @@ type CoffeeBeanAnalyzeResult = {
   status: "draft";
   variety: string | null;
 };
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-const modeOptions: Array<{
-  value: AnalyzeMode;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "legacy",
-    label: "Existing OCR",
-    description: "Use the current Rails extraction flow and continue to the edit screen.",
-  },
-  {
-    value: "mastra",
-    label: "Mastra AI",
-    description: "Analyze with the Mastra image agent, review the result, then save.",
-  },
-];
 
 const resultFields: Array<{
   key: keyof CoffeeBeanAnalyzeResult;
@@ -73,7 +48,6 @@ const resultFields: Array<{
 
 export default function NewCoffeePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<AnalyzeMode>("legacy");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<CoffeeBeanAnalyzeResult | null>(null);
@@ -89,12 +63,6 @@ export default function NewCoffeePage() {
       }
     };
   }, []);
-
-  function handleModeChange(nextMode: AnalyzeMode) {
-    setMode(nextMode);
-    setErrorMessage(null);
-    setResult(null);
-  }
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -121,61 +89,7 @@ export default function NewCoffeePage() {
       return;
     }
 
-    if (mode === "legacy") {
-      await analyzeWithLegacyFlow(selectedImage);
-      return;
-    }
-
     await analyzeWithMastra(selectedImage);
-  }
-
-  async function analyzeWithLegacyFlow(image: File) {
-    if (!API_BASE_URL) {
-      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not defined.");
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setErrorMessage(null);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 270000);
-
-    try {
-      const formData = new FormData();
-      formData.append("image", image);
-
-      const res = await apiFetch(`${API_BASE_URL}/coffee_beans/analyze`, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const message = await getErrorMessage(res, "Image extraction failed.");
-        setErrorMessage(message);
-        return;
-      }
-
-      const data = (await res.json()) as LegacyAnalyzeResponse;
-
-      if (typeof data.id !== "number") {
-        setErrorMessage("The extraction response did not include a coffee bean ID.");
-        return;
-      }
-
-      router.push(`/coffee/edit?id=${data.id}`);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === "AbortError") {
-        router.push("/coffee?processing=true");
-      } else {
-        setErrorMessage("Could not connect to the Rails API.");
-      }
-    } finally {
-      setIsAnalyzing(false);
-    }
   }
 
   async function analyzeWithMastra(image: File) {
@@ -213,11 +127,6 @@ export default function NewCoffeePage() {
   }
 
   async function handleSaveMastraResult() {
-    if (!API_BASE_URL) {
-      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not defined.");
-      return;
-    }
-
     if (!result || !selectedImage) {
       setErrorMessage("Analyze an image before saving.");
       return;
@@ -268,34 +177,6 @@ export default function NewCoffeePage() {
             Choose the extraction method, upload a package image, and review the result before saving.
           </p>
         </header>
-
-        <section className="rounded-md border border-stone-200 bg-white p-2 shadow-sm">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {modeOptions.map((option) => {
-              const selected = mode === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleModeChange(option.value)}
-                  disabled={isAnalyzing || isSaving}
-                  aria-pressed={selected}
-                  className={`rounded-md border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                    selected
-                      ? "border-amber-800 bg-amber-50 text-amber-950"
-                      : "border-transparent text-gray-700 hover:border-stone-200 hover:bg-stone-50"
-                  }`}
-                >
-                  <span className="block text-sm font-semibold">{option.label}</span>
-                  <span className="mt-1 block text-xs leading-5 text-gray-600">
-                    {option.description}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <section className="rounded-md border border-stone-200 bg-white p-5 shadow-sm">
@@ -404,7 +285,7 @@ export default function NewCoffeePage() {
             >
               Cancel
             </Link>
-            {mode === "mastra" && result ? (
+            {result ? (
               <button
                 type="button"
                 onClick={handleSaveMastraResult}
@@ -419,7 +300,7 @@ export default function NewCoffeePage() {
                 disabled={!selectedImage || isAnalyzing || isSaving}
                 className="inline-flex min-h-11 items-center justify-center rounded-md bg-amber-800 px-4 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
               >
-                {isAnalyzing ? "Analyzing..." : mode === "legacy" ? "Analyze with existing OCR" : "Analyze with Mastra"}
+                {isAnalyzing ? "Analyzing..." : "Analyze with Mastra"}
               </button>
             )}
           </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_15_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -44,10 +44,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_000100) do
     t.string "roast_level"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id"
     t.string "variety"
     t.index ["code"], name: "index_coffee_beans_on_code"
     t.index ["flavor_notes"], name: "index_coffee_beans_on_flavor_notes", using: :gin
     t.index ["status"], name: "index_coffee_beans_on_status"
+    t.index ["user_id"], name: "index_coffee_beans_on_user_id"
   end
 
   create_table "events", force: :cascade do |t|
@@ -59,7 +61,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_000100) do
     t.datetime "start_at", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
     t.index ["start_at"], name: "index_events_on_start_at"
+    t.index ["user_id"], name: "index_events_on_user_id"
   end
 
   create_table "holidays", force: :cascade do |t|
@@ -115,21 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_000100) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
-  create_table "voice_memos", force: :cascade do |t|
-    t.string "audio_url", null: false
-    t.string "client_uuid", null: false
-    t.datetime "created_at", null: false
-    t.integer "duration_ms"
-    t.text "memo"
-    t.string "mime_type", null: false
-    t.jsonb "tags", default: [], null: false
-    t.string "title", null: false
-    t.text "transcript"
-    t.datetime "updated_at", null: false
-    t.index ["client_uuid"], name: "index_voice_memos_on_client_uuid", unique: true
-    t.index ["tags"], name: "index_voice_memos_on_tags", using: :gin
-    t.index ["updated_at"], name: "index_voice_memos_on_updated_at"
-  end
-
+  add_foreign_key "coffee_beans", "users"
+  add_foreign_key "events", "users"
   add_foreign_key "tasting_notes", "coffee_beans"
 end

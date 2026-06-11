@@ -3,13 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { apiFetch } from "@/lib/auth";
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 import type { CoffeeBean } from "./types";
 import { buildImageUrl, formatDate } from "./utils";
 import { buttonClasses } from "./styles";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function getDisplayName(coffeeBean: CoffeeBean): string {
   return coffeeBean.name || coffeeBean.name_ja || "名称未設定";
@@ -19,16 +16,8 @@ export default function CoffeePage() {
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const searchParams = useSearchParams();
-  const isProcessing = searchParams.get("processing") === "true";
 
   useEffect(() => {
-    if (!API_BASE_URL) {
-      setError("NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-      setLoading(false);
-      return;
-    }
-
     apiFetch(`${API_BASE_URL}/coffee_beans`)
       .then((res) => {
         if (!res.ok) {
@@ -56,12 +45,6 @@ export default function CoffeePage() {
             新しい豆を登録
           </Link>
         </header>
-
-        {isProcessing ? (
-          <section className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            OCR処理が完了すると一覧に表示されます。表示されない場合はリロードしてください。
-          </section>
-        ) : null}
 
         {loading ? (
           <section className="rounded-md border border-stone-200 bg-white p-6 text-sm text-gray-600">

@@ -28,11 +28,13 @@ class Api::TastingNotesController < ApplicationController
   private
 
   def set_coffee_bean
-    @coffee_bean = CoffeeBean.find(params[:coffee_bean_id])
+    @coffee_bean = current_user.coffee_beans.find(params[:coffee_bean_id])
   end
 
   def set_tasting_note
-    @tasting_note = TastingNote.find(params[:id])
+    @tasting_note = TastingNote.joins(:coffee_bean)
+      .merge(current_user.coffee_beans)
+      .find(params[:id])
   end
 
   def tasting_note_params

@@ -11,18 +11,9 @@ Rails.application.routes.draw do
     resources :holidays, only: [:index]
     resources :events
     resources :coffee_beans, only: [:index, :show, :create, :update, :destroy] do
-      collection do
-        post :analyze
-      end
-
       resources :tasting_notes, only: [:create]
     end
     resources :tasting_notes, only: [:update, :destroy]
-    resources :voice_memos, only: [:index, :create, :update, :destroy] do
-      member do
-        get :audio
-      end
-    end
   end
 
   get "up" => "rails/health#show", as: :rails_health_check

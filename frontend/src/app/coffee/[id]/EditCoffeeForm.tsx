@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { apiFetch } from "@/lib/auth";
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 import type { CoffeeBean } from "../types";
 import {
   buildImageUrl,
@@ -35,8 +35,6 @@ type CoffeeBeanForm = {
 };
 
 type TextFieldName = Exclude<keyof CoffeeBeanForm, "is_limited">;
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const textFields: Array<{
   name: TextFieldName;
@@ -85,11 +83,9 @@ export default function EditCoffeeForm({
   const router = useRouter();
   const [coffeeBean, setCoffeeBean] = useState<CoffeeBean | null>(null);
   const [form, setForm] = useState<CoffeeBeanForm>(emptyForm);
-  const [isLoading, setIsLoading] = useState(Boolean(API_BASE_URL));
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    API_BASE_URL ? null : "NEXT_PUBLIC_API_BASE_URL is not defined."
-  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const imageUrl = useMemo(
     () => buildImageUrl(coffeeBean?.image_url ?? null),
@@ -97,8 +93,6 @@ export default function EditCoffeeForm({
   );
 
   useEffect(() => {
-    if (!API_BASE_URL) return;
-
     const controller = new AbortController();
 
     async function fetchCoffeeBean() {
@@ -140,11 +134,6 @@ export default function EditCoffeeForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!API_BASE_URL) {
-      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not defined.");
-      return;
-    }
 
     setIsSaving(true);
     setErrorMessage(null);

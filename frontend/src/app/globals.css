@@ -1,52 +1,191 @@
 @import "tailwindcss";
 
 @layer components {
-  .calendar-main {
-    @apply relative min-h-0 flex-1 overflow-hidden bg-teal-100/80 px-1;
-  }
+    .calendar-main {
+        @apply relative min-h-0 flex-1 overflow-hidden bg-teal-100/80 px-1;
+    }
 
-  .calendar-layout {
-    /* 0〜699px */
-    @apply mx-auto flex min-h-0 w-full flex-col gap-2;
-    max-width: 100%;
-    height: min(700px, 100dvh);
-  }
-
-  @media (min-width: 700px) {
     .calendar-layout {
-      /* 700〜1199px */
-      max-width: 700px;
-      height: min(650px, 100dvh);
+        /* 0〜699px */
+        @apply mx-auto flex min-h-0 w-full flex-col gap-2;
+        max-width: 100%;
+        height: min(700px, 100dvh);
     }
-  }
 
-  @media (min-width: 1200px) {
-    .calendar-layout {
-      /* 1200px以上 */
-      max-width: 1400px;
-      height: min(650px, 100dvh);
-      flex-direction: row;
-      justify-content: center;
-      gap: 0;
+    @media (min-width: 700px) {
+        .calendar-layout {
+            /* 700〜1199px */
+            max-width: 700px;
+            height: min(650px, 100dvh);
+        }
     }
-  }
 
-  .calendar-month-panel {
-    /* 月表示は基本1画面に収めるが、入りきらない場合はスクロール可能にする */
-    @apply min-h-0 flex-1 overflow-auto rounded-lg border bg-white;
-    padding: 0.25rem;
-    max-height: 500px;
-  }
+    @media (min-width: 1200px) {
+        .calendar-layout {
+            /* 1200px以上 */
+            max-width: 1400px;
+            height: min(650px, 100dvh);
+            flex-direction: row;
+            justify-content: center;
+            gap: 0;
+        }
+    }
 
-  @media (min-width: 700px) {
     .calendar-month-panel {
-      padding: 0.5rem;
+        /* 月表示は基本1画面に収めるが、入りきらない場合はスクロール可能にする */
+        @apply min-h-0 flex-1 overflow-auto rounded-lg border bg-white;
+        padding: 0.25rem;
+        max-height: 500px;
     }
-  }
 
-  @media (min-width: 1200px) {
-    .calendar-month-panel {
-      padding: 0.75rem;
+    @media (min-width: 700px) {
+        .calendar-month-panel {
+            padding: 0.5rem;
+        }
     }
-  }
+
+    @media (min-width: 1200px) {
+        .calendar-month-panel {
+            padding: 0.75rem;
+        }
+    }
+}
+@layer components {
+    .memo-new-button {
+        @apply inline-flex min-h-11 items-center justify-center gap-2
+      rounded-xl
+      border border-blue-200
+      bg-blue-50
+      px-5
+      text-sm font-semibold text-blue-700
+      transition-all duration-200;
+    }
+
+    .memo-new-button:hover {
+        @apply -translate-y-0.5
+      border-blue-300
+      bg-blue-100
+      shadow-md;
+    }
+
+    .memo-new-button:active {
+        @apply translate-y-0 scale-[0.98];
+    }
+
+    .memo-new-button:disabled {
+        @apply cursor-not-allowed
+      border-gray-200
+      bg-gray-100
+      text-gray-400;
+    }
+
+    .memo-new-button:disabled:hover {
+        @apply translate-y-0 shadow-none;
+    }
+}
+/*mew*/
+
+@layer components {
+    .memo-new-button {
+        @apply inline-flex min-h-11 items-center justify-center gap-2
+      rounded-xl
+      border border-blue-300
+      bg-blue-50
+      px-5
+      text-sm font-semibold text-blue-700
+      transition-all duration-200;
+
+        animation: memoButtonGlow 2.2s ease-in-out infinite;
+    }
+
+    .memo-new-button:hover {
+        @apply border-blue-400 bg-blue-100 shadow-md;
+
+        animation:
+            memoButtonHoverBounce 0.45s ease-out,
+            memoButtonGlow 2.2s ease-in-out infinite;
+    }
+
+    .memo-new-button:active {
+        @apply scale-[0.96];
+    }
+
+    .memo-new-button:disabled {
+        @apply cursor-not-allowed
+      border-gray-200
+      bg-gray-100
+      text-gray-400
+      shadow-none;
+
+        animation: none;
+    }
+
+    .memo-new-button:disabled:hover {
+        animation: none;
+    }
+}
+
+@keyframes memoButtonHoverBounce {
+    0% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-6px);
+    }
+
+    70% {
+        transform: translateY(1px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes memoButtonGlow {
+    0%,
+    100% {
+        border-color: rgba(147, 197, 253, 0.8);
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.25);
+    }
+
+    50% {
+        border-color: rgba(96, 165, 250, 1);
+        box-shadow:
+            0 0 12px rgba(59, 130, 246, 0.45),
+            0 0 24px rgba(59, 130, 246, 0.25);
+    }
+}
+/* 録音中はレコード盤アイコン（disc-3）を回転させる */
+@keyframes disc-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 通知ポップアップ：下から画面中央へスライドイン */
+@keyframes notification-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(40vh);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 通知ポップアップ：中央から下へスライドアウト＋フェード */
+@keyframes notification-slide-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(40vh);
+    }
 }

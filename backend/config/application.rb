@@ -28,5 +28,13 @@ module Backend
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    config.action_dispatch.default_headers.merge!(
+      "Content-Security-Policy" => "default-src 'none'; frame-ancestors 'none'",
+      "Referrer-Policy" => "no-referrer",
+      "X-Content-Type-Options" => "nosniff",
+      "X-Frame-Options" => "DENY",
+      "Permissions-Policy" => "camera=(), microphone=(), geolocation=()"
+    )
   end
 end

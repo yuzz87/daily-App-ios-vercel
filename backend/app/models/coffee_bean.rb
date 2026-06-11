@@ -1,4 +1,5 @@
 class CoffeeBean < ApplicationRecord
+  belongs_to :user
   has_many :tasting_notes, dependent: :destroy
 
   STATUSES = %w[draft confirmed].freeze

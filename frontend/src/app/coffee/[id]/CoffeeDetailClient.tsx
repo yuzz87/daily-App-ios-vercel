@@ -3,14 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/auth";
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 import DeleteCoffeeBeanButton from "./DeleteCoffeeBeanButton";
 import TastingNotesSection from "./TastingNotesSection";
 import type { CoffeeBean } from "../types";
 import { buildImageUrl, formatDate, formatValue } from "../utils";
 import { buttonClasses } from "../styles";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const detailFields: Array<{ label: string; value: keyof CoffeeBean }> = [
   { label: "Brand", value: "brand" },
@@ -31,12 +29,6 @@ export default function CoffeeDetailClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!API_BASE_URL) {
-      setError("NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-      setLoading(false);
-      return;
-    }
-
     const controller = new AbortController();
 
     apiFetch(`${API_BASE_URL}/coffee_beans/${id}`, {

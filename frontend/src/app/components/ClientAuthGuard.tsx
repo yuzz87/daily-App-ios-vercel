@@ -1,28 +1,42 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { getToken } from "@/lib/auth";
-
-const AUTH_BYPASS = process.env.NODE_ENV !== "production";
+import { hasSession } from "@/lib/auth";
 
 export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(AUTH_BYPASS);
+  const [authorizedPath, setAuthorizedPath] = useState<string | null>(null);
 
   useEffect(() => {
-    if (AUTH_BYPASS) return;
-    if (pathname === "/login") {
-      setAuthorized(true);
-      return;
-    }
-    if (!getToken()) {
-      router.replace("/login");
-    } else {
-      setAuthorized(true);
-    }
+    if (isPublicPath(pathname)) return;
+
+    let cancelled = false;
+
+    hasSession()
+      .then((authenticated) => {
+        if (cancelled) return;
+
+        if (authenticated) {
+          setAuthorizedPath(pathname);
+        } else {
+          router.replace("/login");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) router.replace("/login");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, router]);
 
-  if (!authorized) return null;
+  if (isPublicPath(pathname)) return <>{children}</>;
+  if (authorizedPath !== pathname) return null;
   return <>{children}</>;
+}
+
+function isPublicPath(pathname: string): boolean {
+  return pathname === "/login" || pathname === "/taskmemo";
 }

@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  user: one
   title: MyString
   description: MyText
   start_at: 2026-05-08 15:46:31
@@ -9,6 +10,7 @@ one:
   color: MyString
 
 two:
+  user: two
   title: MyString
   description: MyText
   start_at: 2026-05-08 15:46:31

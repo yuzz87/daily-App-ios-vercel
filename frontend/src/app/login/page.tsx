@@ -2,9 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { setToken } from "@/lib/auth";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,18 +12,14 @@ export default function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!API_BASE_URL) {
-      setError("API URLが設定されていません。");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/sign_in`, {
+      const res = await fetch("/api/auth/sign_in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ user: { email, password } }),
       });
 
@@ -35,13 +28,6 @@ export default function LoginPage() {
         return;
       }
 
-      const token = res.headers.get("Authorization");
-      if (!token) {
-        setError("認証トークンの取得に失敗しました。");
-        return;
-      }
-
-      setToken(token);
       router.push("/calendar");
     } catch {
       setError("サーバーに接続できませんでした。");
@@ -65,6 +51,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isLoading}
+              autoComplete="email"
               className="min-h-11 rounded-md border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:bg-stone-100"
             />
           </label>
@@ -77,6 +64,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
+              autoComplete="current-password"
               className="min-h-11 rounded-md border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-amber-700 focus:ring-2 focus:ring-amber-100 disabled:bg-stone-100"
             />
           </label>

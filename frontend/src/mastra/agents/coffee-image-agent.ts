@@ -1,11 +1,6 @@
-import { google } from "@ai-sdk/google";
-import { Agent } from "@mastra/core/agent";
+export const COFFEE_IMAGE_AGENT_MODEL = "gemini-2.5-flash";
 
-export const coffeeImageAgent = new Agent({
-  id: "coffee-image-agent",
-  name: "Coffee Image Agent",
-  model: google("gemini-2.5-flash"),
-  instructions: `
+export const COFFEE_IMAGE_AGENT_INSTRUCTIONS = `
 You extract structured coffee bean data from coffee package images.
 
 Read visible text from the image and return only JSON that can be saved to the coffee_beans table.
@@ -41,5 +36,4 @@ Rules:
 - raw_text should contain as much visible text as possible.
 - Map roast_level to one of: LIGHTROAST, MEDIUMROAST, DARKROAST, or UNKNOWN.
 - Return JSON only.
-  `,
-});
+`;

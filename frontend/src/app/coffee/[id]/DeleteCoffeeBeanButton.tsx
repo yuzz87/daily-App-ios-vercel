@@ -2,13 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { apiFetch } from "@/lib/auth";
+import { API_BASE_URL, apiFetch } from "@/lib/auth";
 
 type DeleteCoffeeBeanButtonProps = {
   coffeeBeanId: number;
 };
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function DeleteCoffeeBeanButton({
   coffeeBeanId,
@@ -18,11 +16,6 @@ export default function DeleteCoffeeBeanButton({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleDelete() {
-    if (!API_BASE_URL) {
-      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not configured.");
-      return;
-    }
-
     const confirmed = window.confirm(
       "Delete this coffee bean? Tasting notes for this bean will also be deleted."
     );

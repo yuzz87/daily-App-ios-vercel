@@ -24,8 +24,6 @@ services:
         value: https://yuzz87.github.io
       - key: TARGET_TIMEOUT
         value: "300"
-      - key: TESSERACT_TIMEOUT
-        value: "60"
       - key: NOTION_TOKEN
         sync: false
       - key: NOTION_DATABASE_ID

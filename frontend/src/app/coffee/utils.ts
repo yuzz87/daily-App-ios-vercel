@@ -1,10 +1,11 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { API_BASE_URL } from "@/lib/auth";
 
 export function buildImageUrl(imageUrl: string | null): string | null {
   if (!imageUrl) return null;
   if (/^https?:\/\//.test(imageUrl)) return imageUrl;
-  if (!API_BASE_URL) return imageUrl;
-  return `${new URL(API_BASE_URL).origin}${imageUrl}`;
+  if (imageUrl.startsWith("/uploads/")) return `${API_BASE_URL}${imageUrl}`;
+  if (imageUrl.startsWith("/api/")) return `${API_BASE_URL}${imageUrl.slice(4)}`;
+  return imageUrl;
 }
 
 export function formatDate(value: string | null, fallback = "-"): string {

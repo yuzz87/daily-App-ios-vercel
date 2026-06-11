@@ -1,50 +1,63 @@
 import { BASE_PATH } from "@/lib/publicPath";
 
-const TOKEN_KEY = "auth_token";
+export const API_BASE_URL = "/api/backend";
+
+export async function hasSession(): Promise<boolean> {
+  const response = await fetch("/api/auth/session", {
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+
+  if (!response.ok) return false;
+
+  const data = (await response.json()) as { authenticated?: boolean };
+  return data.authenticated === true;
+}
 
 export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  return null;
 }
 
 export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+  void token;
+  // Tokens are stored in an HttpOnly cookie by the server.
 }
 
 export function removeToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  void fetch("/api/auth/sign_out", {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
 }
 
 export function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: token } : {};
+  return {};
 }
 
 export async function apiFetch(
   input: RequestInfo,
   init: RequestInit = {}
 ): Promise<Response> {
-  const baseHeaders: Record<string, string> = { ...authHeaders() };
+  const baseHeaders: Record<string, string> = {};
 
-  // FormData の場合は Content-Type をセットしない（ブラウザが自動設定）
   if (!(init.body instanceof FormData)) {
     baseHeaders["Content-Type"] = "application/json";
   }
 
   const res = await fetch(input, {
     ...init,
+    credentials: "same-origin",
     headers: {
       ...baseHeaders,
       ...(init.headers as Record<string, string> | undefined),
     },
   });
 
-  if (res.status === 401 && process.env.NODE_ENV === "production") {
+  if (res.status === 401) {
     removeToken();
     if (typeof window !== "undefined" && window.location.pathname !== `${BASE_PATH}/login`) {
       window.location.href = `${BASE_PATH}/login`;
     }
-    return res;
   }
 
   return res;

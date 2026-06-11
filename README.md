@@ -1,183 +1,276 @@
-# Daily Life App
+# Daily Life App ポートフォリオ
 
-> 日常生活の管理を 1 つにまとめた、スマホネイティブ感覚の PWA。
-> カレンダー・コーヒー豆 AI 解析・ボイスメモを統合した個人向けライフログツールです。
+## 1. 概要
 
-🔗 **[デモを見る](https://daily-life-app.vercel.app)**
+Daily Life App は、日常の予定管理、音声メモ、コーヒー豆記録を扱う個人向け PWA アプリケーションです。
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js) ![React](https://img.shields.io/badge/React-19-61dafb?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss) ![Rails](https://img.shields.io/badge/Rails-8.1-cc0000?logo=rubyonrails) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-DB-336791?logo=postgresql)
+スマートフォンと PC の両方で利用できることを意識し、予定管理・音声入力・画像解析など、日常的に使う機能を 1 つのアプリにまとめました。
 
----
+主な機能は以下の 3 つです。
 
-## スクリーンショット
+| 機能 | 内容 | 保存先 |
+| --- | --- | --- |
+| Calendar | 予定の作成・編集・削除、週表示・月表示、祝日表示、検索 | PostgreSQL |
+| TaskMemo | 音声入力による文字起こしメモの作成、一覧表示、詳細表示、タイトル編集、削除 | localStorage |
+| Coffee | コーヒー豆パッケージ画像の AI 解析、豆情報の管理、テイスティングメモ記録 | PostgreSQL |
 
-|                 カレンダー                 |           コーヒー豆 AI 解析           |              ボイスメモ              |
-| :----------------------------------------: | :------------------------------------: | :----------------------------------: |
-| ![calendar](docs/screenshots/calendar.png) | ![coffee](docs/screenshots/coffee.png) | ![voice](docs/screenshots/voice.png) |
-
-> ※ スクリーンショットは順次追加予定です。
-
----
-
-## 主な機能
-
-### カレンダー
-
-月・週・日・年・スケジュールの **5 ビュー切替**で予定を管理。祝日自動表示、カラーラベル、キーワード検索に対応。
-
-### コーヒー豆 AI 解析
-
-PostCoffee のパッケージ画像から、**Tesseract OCR + 独自パーサ**で商品名・産地・焙煎度・フレーバーノーツ等を自動抽出。
-撮影 → 確認 → 保存 までを最短 30 秒で完了します。
-
-### ボイスメモ
-
-ブラウザマイクで録音し、メモ・タグと一緒に保存。
-**IndexedDB によるオフライン保存** とサーバー同期を両立し、オンライン復帰時に自動同期します。
-
-<details>
-<summary>各機能の詳細仕様を開く</summary>
-
-#### カレンダー ビュー一覧
-
-- 月 / 週 / 日 / 年 / スケジュール（リスト形式）
-- 予定の作成・編集・削除（モーダル UI）
-- サイドバーにミニカレンダーと直近の予定一覧
-
-#### コーヒー豆 記録できる情報
-
-ブランド・商品コード / 商品名（英語・日本語） / 産地・地域 / 焙煎度 / 精製方法 / フレーバーノーツ / 品種 / 標高 / 農家・農園 / Limited フラグ / テイスティングノート（スコア・感想）
-
-#### ボイスメモ 対応形式
-
-WebM / M4A / WAV（ブラウザの MediaRecorder API に依存）
-
-</details>
+TaskMemo はフロントエンドのみで動作するローカル機能です。  
+メモはブラウザの `localStorage` に保存し、Rails API / PostgreSQL には保存しません。
 
 ---
 
-## 技術スタック
+## 2. 開発背景
 
-### フロントエンド
+研究や日常生活の中で、予定・メモ・記録が複数のツールに分散してしまう課題がありました。
 
-| 技術          | バージョン | 選定理由                                                |
-| ------------- | ---------- | ------------------------------------------------------- |
-| Next.js       | 16.2.5     | App Router で SSR / 静的最適化を両立。Vercel との親和性 |
-| React         | 19.2.4     | React Compiler を有効化し、手動メモ化を削減             |
-| TypeScript    | 5          | 型安全な開発と IDE 支援                                 |
-| Tailwind CSS  | 4          | ユーティリティファーストで UI を高速に組み上げる        |
-
-### バックエンド
-
-| 技術                          | 選定理由                                         |
-| ----------------------------- | ------------------------------------------------ |
-| Ruby on Rails 8.1（API-only） | フロントと分離した REST API 構成                 |
-| PostgreSQL                    | jsonb による柔軟なメタデータ保存（タグ等）       |
-| Devise + devise-jwt           | JWT ベースの認証・トークン失効                   |
-| rack-cors                     | フロント（Vercel ドメイン）からの CORS 許可      |
-| Tesseract OCR                 | コーヒーパッケージ画像のテキスト抽出             |
-| libvips / ruby-vips           | OCR 前処理（コントラスト・解像度調整で精度向上） |
-
-### インフラ・デプロイ
-
-| サービス                      | 用途                                       |
-| ----------------------------- | ------------------------------------------ |
-| **Vercel**                    | フロントエンドのホスティング・自動デプロイ |
-| **Render**                    | Rails API のホスティング（Free プラン）    |
-| **Render Managed PostgreSQL** | データベース                               |
+そこで、スマートフォンから素早く使える PWA として、予定管理・音声メモ・コーヒー記録をまとめて扱えるアプリを開発しました。
 
 ---
 
-## アーキテクチャ
+## 3. 技術スタック
+
+### Frontend
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- App Router
+- PWA manifest / Service Worker
+
+### Backend
+
+- Ruby on Rails API
+- PostgreSQL
+- Devise + devise-jwt
+- rack-cors
+- rack-attack
+
+### AI / 外部 API
+
+- AI SDK
+- Google Gemini API
+- Web Speech API
+- MediaRecorder API
+
+### Infrastructure / Hosting
+
+- Vercel
+- AWS Route 53
+- 独自ドメイン
+
+---
+
+## 4. アーキテクチャ
 
 ```mermaid
 flowchart LR
-    User([ユーザー / PWA])
+    User["User / Browser / PWA"]
+    NextUI["Next.js App Router"]
+    NextAPI["Next.js API Routes<br/>Auth Cookie / Backend Proxy"]
+    Rails["Rails API<br/>Devise JWT / REST API"]
+    DB[("PostgreSQL")]
+    AI["AI SDK + Google Gemini"]
+    Storage["Local uploads / Cloudinary optional"]
+    LocalStorage["Browser localStorage<br/>TaskMemo"]
 
-    subgraph Vercel["Vercel"]
-        Next["Next.js 16<br/>(App Router)"]
-    end
-
-    subgraph Render["Render"]
-        Rails["Rails 8.1 API<br/>(Devise + JWT)"]
-        OCR["Tesseract OCR<br/>+ libvips"]
-        DB[("PostgreSQL")]
-    end
-
-    User -- "HTTPS / JWT" --> Next
-    Next -- "REST + multipart" --> Rails
+    User --> NextUI
+    NextUI --> NextAPI
+    NextUI --> LocalStorage
+    NextAPI --> Rails
     Rails --> DB
-    Rails -- "画像解析" --> OCR
-
-    User -. "IndexedDB / localStorage<br/>(オフライン保持)" .- Next
+    NextAPI --> AI
+    Rails --> Storage
 ```
+
+認証付き API 通信は、ブラウザから Rails へ直接送らず、Next.js の `/api/backend/*` を経由します。
+
+JWT はブラウザ JavaScript から読めない HttpOnly Cookie に保存し、フロントエンド側でトークンを直接扱わない構成にしました。
 
 ---
 
-## 技術的な見どころ
+## 5. 機能詳細
 
-ポートフォリオとして特に注力したポイントです。
+## 5.1 Calendar
 
-### 1. Tesseract OCR + 独自パーサで「撮るだけ登録」を実現
+### 目的
 
-コーヒー豆のパッケージ写真から商品情報を自動抽出。libvips で前処理（コントラスト・解像度調整）を挟むことで OCR 精度を底上げし、行レイアウト解析でブランド・産地・フレーバーノーツを項目別に振り分けます。
+予定を週・月の単位で管理する機能です。  
+日常の予定管理をスマートフォンでも扱いやすい UI として提供します。
 
-### 2. IndexedDB によるオフラインファースト
+### 主な機能
 
-ボイスメモは録音直後にローカル（IndexedDB）に保存。オンライン時はサーバーへ自動同期、オフラインでも一切操作が止まりません。同期状態は `local / pending / synced / error` の 4 段階でユーザーに可視化しています。
+| 操作 | 内容 |
+| --- | --- |
+| 前へ / 次へ | 表示中の週または月を移動 |
+| Today | 今日の日付へ戻る |
+| 表示切替 | 週表示と月表示を切り替える |
+| サイドバー | ミニカレンダーと直近イベント一覧を表示 |
+| 検索 | タイトル・説明から予定を絞り込む |
+| 予定作成 | 日付クリックまたは作成ボタンからモーダルを開く |
+| 予定編集 | 既存イベントクリックで編集モーダルを開く |
+| 予定削除 | 編集モーダルから削除 |
 
-### 3. Web Speech API を使ったリアルタイム文字起こし（再構築中）
+### 実装方針
 
-`/taskmemo` ページで録音と同時に音声をテキスト化。録音ファイル本体とテキストの両方を残し、後から検索できる構造に再設計中です（仕様: [taskmemo仕様書.md](taskmemo仕様書.md)）。
-
-### 4. React 19 + React Compiler
-
-手動の `useMemo` / `useCallback` を最小限にし、コンパイラ最適化に任せる構成。コードのノイズを減らしつつ再レンダリングを抑制しています。
-
-### 5. PWA / ホーム画面追加対応
-
-スマートフォンのホーム画面に追加するとネイティブアプリ感覚で起動できる構成。マイク・カメラへのアクセスもブラウザ権限経由で完結します。
-
----
-
-## デプロイ構成
-
-- **フロントエンド**: GitHub の `main` ブランチ更新で Vercel が自動的にビルド・公開
-- **バックエンド**: Render の自動デプロイ（Rails の API-only モード）
-- **データベース**: Render Managed PostgreSQL（バックエンドと同 VPC）
-- **環境変数**: フロント側は `NEXT_PUBLIC_API_BASE_URL` で API ドメインを指定
+Calendar は Rails API で予定の CRUD と祝日取得を行います。  
+フロントエンドでは、週表示・月表示に必要な期間のイベントを取得し、表示形式に応じて配置を変えています。
 
 ---
 
-## 今後の展望
+## 5.2 TaskMemo
 
-- `/taskmemo` ページの再構築（音声 + 文字起こしを軸にした保存・検索）
-- 多言語対応（現状は日本語固定）
+### 目的
+
+短い音声メモをその場で文字起こしし、ブラウザ内に保存する機能です。
+
+ログインやサーバー同期を不要にし、端末上で素早く記録できる軽量なメモ機能として提供します。
+
+### 主な機能
+
+| 操作 | 内容 |
+| --- | --- |
+| 録音開始 / 停止 | マイク入力を扱い、日本語文字起こしを行う |
+| 新規メモ保存 | 録音結果または手入力した文字起こしを新規メモとして保存 |
+| メモ一覧 | 保存済みメモを更新日時順に表示 |
+| メモ詳細 | タイトル、作成日時、文字起こし本文を表示 |
+| タイトル編集 | 既存メモのタイトルのみ更新 |
+| メモ削除 | 選択中メモを削除 |
+
+### 実装方針
+
+TaskMemo は `localStorage` に保存し、音声文字起こし本文・タイトル・作成日時・更新日時を保持します。
+
+録音ボタンは新規メモ作成専用です。  
+既存メモを選択中に録音しても、既存メモの本文は更新しないようにし、新規作成と既存メモ編集の責務を分けました。
+
+### 使用 API
+
+- `MediaRecorder`
+- `Web Speech API`
+- `localStorage`
 
 ---
 
-## 開発者向け（ローカル起動）
+## 5.3 Coffee
 
-<details>
-<summary>セットアップ手順を開く</summary>
+### 目的
 
-```bash
-# フロントエンド
-cd frontend
-npm install
-npm run dev   # http://localhost:3000
+コーヒー豆のパッケージ画像から AI で商品情報を抽出し、コーヒー豆の記録とテイスティングメモを管理する機能です。
 
-# バックエンド
-cd backend
-bundle install
-bin/rails db:setup
-bin/rails s   # http://localhost:3001
+### 主な画面
+
+| URL | 内容 |
+| --- | --- |
+| `/coffee` | コーヒー豆一覧 |
+| `/coffee/new` | 画像アップロード・解析 |
+| `/coffee/detail?id=:id` | 詳細表示 |
+| `/coffee/edit?id=:id` | 編集 |
+
+### 実装方針
+
+Coffee の画像解析は Next.js API Route で実行します。  
+AI SDK + Google Gemini API を使い、画像内の文字や商品情報を読み取ります。
+
+---
+
+## 6. データ設計
+
+バックエンド側では、主に以下のデータを扱います。
+
+```mermaid
+erDiagram
+    users ||--o{ events : owns
+    users ||--o{ coffee_beans : owns
+    coffee_beans ||--o{ tasting_notes : has
 ```
 
-`frontend/.env.local`:
+### 主なテーブル
 
-```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-```
+| テーブル | 内容 |
+| --- | --- |
+| users | 認証ユーザー |
+| events | Calendar の予定 |
+| holidays | 祝日情報 |
+| coffee_beans | コーヒー豆情報 |
+| tasting_notes | テイスティングメモ |
 
-</details>
+TaskMemo は `localStorage` 保存のため、DB テーブルを持ちません。
+
+
+---
+
+## 7. 工夫したこと
+
+
+### Calendar の責務分離
+
+Calendar は hook とコンポーネントを分け、表示、日付操作、API 通信、フォーム処理を追いやすくしました。
+
+週表示・月表示・検索・フォーム操作が混ざると複雑になるため、処理単位を分けて保守しやすい構成にしました。
+
+### AI 解析結果の確認フロー
+
+Coffee の画像解析は、Mastra を使って実装しました。
+Next.js API Route から画像解析処理を呼び出し、Mastra 側で Google Gemini API を利用して、画像内の文字や商品情報を読み取る構成にしています。
+
+### TaskMemo のローカル機能化
+
+TaskMemo はサーバー同期を持たせず、`localStorage` を使うことで、ログイン不要で素早く使えるローカル機能として切り出しました。
+
+サーバーに保存する必要があるデータと、端末内で完結させるデータを分けて設計しました。
+
+
+---
+
+## 8. 苦労したこと
+
+### 認証構成の整理
+
+Rails の Devise JWT と Next.js API Routes の責務分離に苦労しました。
+
+当初は、ブラウザ側で JWT を直接扱う構成も考えましたが、セキュリティ面を考慮し、HttpOnly Cookie と BFF を使う構成に整理しました。
+
+### Calendar の表示ロジック
+
+Calendar は週表示と月表示でイベントの見せ方が異なるため、表示ロジックが複雑になりました。
+
+特に、日付移動、イベント取得、検索、モーダル状態が混ざると見通しが悪くなるため、hook とコンポーネントに分けて管理しました。
+
+### Coffee の AI 解析フロー
+
+Coffee は画像解析、プレビュー、保存、編集確認の流れが複数画面にまたがるため、データの流れを整理する必要がありました。
+
+### TaskMemo の録音と保存タイミング
+
+TaskMemo は録音、文字起こし、保存タイミングが重なるため、既存メモ更新と新規メモ作成の責務が混ざりやすい点に苦労しました。
+
+録音は新規メモ作成専用とし、既存メモではタイトル編集のみを行うことで、操作の意味を明確にしました。
+
+---
+
+## 9. 今後の改善点
+
+### Calendar
+
+- 通知機能を追加する
+
+### TaskMemo
+
+- mastraを活用する
+- Markdown / CSV などのエクスポート機能を追加する
+
+### Coffee
+
+- 過去データを使った候補補完を追加する
+- テイスティングメモのグラフ表示を追加する
+
+### デモ環境
+
+- API 接続なしでも操作できるデモモードを用意する
+- ポートフォリオ閲覧時に、ログインやバックエンド起動なしで主要画面を確認できるようにする
+
+### 将来的な拡張
+
+- AI 解析処理をワークフロー化し、解析・検証・保存前チェックを分離する
+- モバイルアプリ化し、カメラ・マイク・通知機能をより自然に扱える形にする
