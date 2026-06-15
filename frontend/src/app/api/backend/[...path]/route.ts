@@ -20,7 +20,6 @@ type RouteContext = {
 const FORWARDED_RESPONSE_HEADERS = new Set([
   "cache-control",
   "content-disposition",
-  "content-length",
   "content-type",
   "etag",
   "last-modified",
