@@ -4,7 +4,7 @@
 
 <table>
   <tr>
-    <td align="center">
+    <td align="center" width="33%">
       <img
         width="100%"
         alt="calendar"
@@ -13,10 +13,8 @@
       <br />
       カレンダー画面
     </td>
-  </tr>
 
-  <tr>
-    <td align="center">
+    <td align="center" width="33%">
       <img
         width="100%"
         alt="voicememo"
@@ -25,14 +23,13 @@
       <br />
       ボイスメモ画面
     </td>
-  </tr>
 
-  <tr>
-    <td align="center">
+    <td align="center" width="33%">
       <img
         width="100%"
         alt="coffee"
-        src="https://github.com/user-attachments/assets/bce27203-f0c6-44ff-bfd1-df7a433d35ed" />
+        src="https://github.com/user-attachments/assets/bce27203-f0c6-44ff-bfd1-df7a433d35ed"
+      />
       <br />
       コーヒー画像登録画面
     </td>
