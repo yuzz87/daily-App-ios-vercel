@@ -1,4 +1,4 @@
-# Daily Life App ポートフォリオ
+# Daily Life App
 
 ## 実装画面
 
