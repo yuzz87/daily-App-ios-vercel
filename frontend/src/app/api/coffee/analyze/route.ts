@@ -1,20 +1,9 @@
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
-import {
-  COFFEE_IMAGE_AGENT_INSTRUCTIONS,
-  COFFEE_IMAGE_AGENT_MODEL,
-} from "@/mastra/agents/coffee-image-agent";
+import { mastra } from "@/mastra";
+import { COFFEE_IMAGE_AGENT_ID } from "@/mastra/agents/coffee-image-agent";
 import { CoffeeBeanAnalyzeSchema } from "@/mastra/schemas/coffee-bean-schema";
 
 export const runtime = "nodejs";
-
-function extractJson(text: string): string {
-  return text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,11 +20,10 @@ export async function POST(req: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const agent = mastra.getAgentById(COFFEE_IMAGE_AGENT_ID);
 
-    const result = await generateText({
-      model: google(COFFEE_IMAGE_AGENT_MODEL),
-      system: COFFEE_IMAGE_AGENT_INSTRUCTIONS,
-      messages: [
+    const result = await agent.generate(
+      [
         {
           role: "user",
           content: [
@@ -55,11 +43,14 @@ Do not invent information that is not visible.
           ],
         },
       ],
-    });
+      {
+        structuredOutput: {
+          schema: CoffeeBeanAnalyzeSchema,
+        },
+      }
+    );
 
-    const jsonText = extractJson(result.text);
-    const parsed = JSON.parse(jsonText);
-    const validated = CoffeeBeanAnalyzeSchema.parse(parsed);
+    const validated = CoffeeBeanAnalyzeSchema.parse(result.object);
 
     return Response.json({ coffee_bean: validated });
   } catch (error) {

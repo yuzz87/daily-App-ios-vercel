@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { publicUrl } from "@/lib/publicPath";
 import type { CalendarViewMode } from "../../types";
 
@@ -41,6 +42,7 @@ export default function CalendarHeader({
   onCreateEvent,
 }: CalendarHeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 
   return (
@@ -160,7 +162,10 @@ export default function CalendarHeader({
             <div className="flex items-center gap-5 sm:order-3">
               <button
                 type="button"
-                onClick={() => setIsSearchOpen(true)}
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  setIsSearchOpen(true);
+                }}
                 aria-label="検索"
                 title="検索"
                 className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
@@ -187,14 +192,39 @@ export default function CalendarHeader({
                 <Image src={publicUrl("/square-plus.svg")} alt="" width={30} height={30} />
               </button>
 
-              <button
-                type="button"
-                aria-label="設定"
-                title="設定"
-                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
-              >
-                <Image src={publicUrl("/settings.svg")} alt="" width={30} height={30} />
-              </button>
+              <div className="relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen((current) => !current)}
+                  aria-label="設定"
+                  title="設定"
+                  aria-expanded={isSettingsOpen}
+                  aria-controls="calendar-settings-menu"
+                  className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full hover:bg-gray-300/50"
+                >
+                  <Image src={publicUrl("/settings.svg")} alt="" width={30} height={30} />
+                </button>
+
+                {isSettingsOpen ? (
+                  <div
+                    id="calendar-settings-menu"
+                    className="fixed right-4 top-16 z-50 grid w-44 gap-2 rounded-md border border-gray-200 bg-white p-2 text-sm shadow-lg"
+                  >
+                    <Link
+                      href="/demo/calendar"
+                      className="flex min-h-10 items-center justify-center rounded-md border border-gray-200 px-3 font-semibold text-gray-800 transition hover:bg-teal-50 hover:text-teal-800"
+                    >
+                      Demo page
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="flex min-h-10 items-center justify-center rounded-md border border-gray-200 px-3 font-semibold text-gray-800 transition hover:bg-stone-50"
+                    >
+                      Login page
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         )}

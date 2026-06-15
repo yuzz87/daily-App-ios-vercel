@@ -16,7 +16,7 @@ export const CoffeeBeanAnalyzeSchema = z.object({
   raw_text: z.string().nullable(),
   region: z.string().nullable(),
   roast_level: z.string().nullable(),
-  status: z.literal("draft"),
+  status: z.literal("confirmed"),
   variety: z.string().nullable(),
 });
 

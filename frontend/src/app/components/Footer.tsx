@@ -26,7 +26,11 @@ const footerLinks = [
 export default function Footer() {
   const pathname = usePathname();
 
-  if (pathname === "/login") return null;
+  if (pathname === "/login" || pathname === "/demo") {
+    return null;
+  }
+
+  const isDemoPath = pathname.startsWith("/demo/");
 
   return (
     <footer className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
@@ -35,13 +39,14 @@ export default function Footer() {
         className="mx-auto grid max-w-3xl grid-cols-3 px-2 py-2"
       >
         {footerLinks.map((link) => {
+          const href = isDemoPath ? `/demo${link.href}` : link.href;
           const isActive =
-            pathname === link.href || pathname.startsWith(`${link.href}/`);
+            pathname === href || pathname.startsWith(`${href}/`);
 
           return (
             <Link
               key={link.href}
-              href={link.href}
+              href={href}
               aria-current={isActive ? "page" : undefined}
               className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-xs transition ${
                 isActive

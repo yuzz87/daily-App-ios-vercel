@@ -7,7 +7,7 @@ class Api::CoffeeBeansController < ApplicationController
     oversize_message: "image must be 10MB or smaller"
   ).freeze
 
-  before_action :set_coffee_bean, only: [:show, :update, :destroy]
+  before_action :set_coffee_bean, only: [:show, :destroy]
 
   def index
     coffee_beans = current_user.coffee_beans.order(created_at: :desc)
@@ -16,7 +16,7 @@ class Api::CoffeeBeansController < ApplicationController
   end
 
   def show
-    render json: @coffee_bean.as_json_for_api(include_tasting_notes: true)
+    render json: @coffee_bean.as_json_for_api
   end
 
   def create
@@ -42,14 +42,6 @@ class Api::CoffeeBeansController < ApplicationController
       render json: coffee_bean.as_json_for_api, status: :created
     else
       render json: { errors: coffee_bean.errors.full_messages }, status: :unprocessable_entity
-    end
-  end
-
-  def update
-    if @coffee_bean.update(coffee_bean_params)
-      render json: @coffee_bean.as_json_for_api(include_tasting_notes: true)
-    else
-      render json: { errors: @coffee_bean.errors.full_messages }, status: :unprocessable_entity
     end
   end
 

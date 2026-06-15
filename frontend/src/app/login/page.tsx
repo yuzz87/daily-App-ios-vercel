@@ -36,6 +36,10 @@ export default function LoginPage() {
     }
   }
 
+  function handleDemoClick() {
+    router.push("/demo/calendar");
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4">
       <div className="w-full max-w-sm rounded-md border border-stone-200 bg-white p-8 shadow-sm">
@@ -81,6 +85,15 @@ export default function LoginPage() {
             className="mt-2 min-h-11 rounded-md bg-amber-800 text-sm font-semibold text-white transition hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-600"
           >
             {isLoading ? "ログイン中..." : "ログイン"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDemoClick}
+            disabled={isLoading}
+            className="min-h-11 rounded-md border border-stone-300 text-sm font-semibold text-gray-800 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            デモを見る
           </button>
         </form>
       </div>

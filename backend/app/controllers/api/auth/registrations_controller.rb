@@ -1,6 +1,8 @@
 module Api
   module Auth
     class RegistrationsController < Devise::RegistrationsController
+      skip_before_action :authenticate_user!, only: [:create]
+
       before_action :check_allowed_email, only: :create
 
       private
