@@ -13,7 +13,6 @@
       <br />
       カレンダー画面
     </td>
-
     <td align="center" width="33%">
       <img
         width="100%"
@@ -23,7 +22,6 @@
       <br />
       ボイスメモ画面
     </td>
-
     <td align="center" width="33%">
       <img
         width="100%"
