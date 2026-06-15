@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: daily-app-api
+    name: DailyAppIOS
     env: docker
     region: singapore
     plan: free
@@ -23,7 +23,7 @@ services:
       - key: SEED_USER_PASSWORD
         sync: false
       - key: FRONTEND_URL
-        value: https://yuzz87.github.io
+        sync: false
       - key: TARGET_TIMEOUT
         value: "300"
       - key: NOTION_TOKEN
