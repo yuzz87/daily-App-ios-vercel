@@ -1,21 +1,3 @@
-export type TastingNote = {
-  id: number;
-  rating: number | null;
-  acidity: number | null;
-  bitterness: number | null;
-  sweetness: number | null;
-  aroma: number | null;
-  body: number | null;
-  memo: string | null;
-  brew_method: string | null;
-  grind_size: string | null;
-  water_temp: number | null;
-  coffee_grams: number | null;
-  water_grams: number | null;
-  brew_time: string | null;
-  created_at: string | null;
-};
-
 export type CoffeeBean = {
   id: number;
   image_url: string | null;
@@ -37,5 +19,4 @@ export type CoffeeBean = {
   status: string | null;
   created_at: string | null;
   updated_at: string | null;
-  tasting_notes?: TastingNote[];
 };

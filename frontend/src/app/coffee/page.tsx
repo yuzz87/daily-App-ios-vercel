@@ -2,24 +2,55 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { API_BASE_URL, apiFetch } from "@/lib/auth";
+import { publicUrl } from "@/lib/publicPath";
+import { getDemoCoffeeBeans, isDemoCoffeePath } from "./demoCoffeeStore";
 import type { CoffeeBean } from "./types";
 import { buildImageUrl, formatDate } from "./utils";
-import { buttonClasses } from "./styles";
 
 function getDisplayName(coffeeBean: CoffeeBean): string {
   return coffeeBean.name || coffeeBean.name_ja || "名称未設定";
 }
 
 export default function CoffeePage() {
+  const pathname = usePathname();
+  const isDemo = isDemoCoffeePath(pathname);
+  const basePath = isDemo ? "/demo/coffee" : "/coffee";
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    let didFinish = false;
+
+    const loadingTimer = window.setTimeout(() => {
+      if (cancelled || didFinish) return;
+      setLoading(true);
+      setError(null);
+    }, 0);
+
+    if (isDemo) {
+      const demoTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        didFinish = true;
+        setCoffeeBeans(getDemoCoffeeBeans());
+        setError(null);
+        setLoading(false);
+      }, 0);
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(loadingTimer);
+        window.clearTimeout(demoTimer);
+      };
+    }
+
     apiFetch(`${API_BASE_URL}/coffee_beans`)
       .then((res) => {
+        if (cancelled) return null;
         if (!res.ok) {
           setError("コーヒー豆の取得に失敗しました。");
           return null;
@@ -27,25 +58,44 @@ export default function CoffeePage() {
         return res.json() as Promise<CoffeeBean[]>;
       })
       .then((data) => {
-        if (data) setCoffeeBeans(Array.isArray(data) ? data : []);
+        if (!cancelled && data) setCoffeeBeans(Array.isArray(data) ? data : []);
       })
-      .catch(() => setError("Rails API に接続できませんでした。"))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        if (!cancelled) setError("Rails API に接続できませんでした。");
+      })
+      .finally(() => {
+        didFinish = true;
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(loadingTimer);
+    };
+  }, [isDemo]);
 
   return (
-    <main className="h-full overflow-y-auto bg-stone-50 px-4 py-6 text-gray-900 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 pb-6">
-        <header className="flex flex-col gap-4 border-b border-stone-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-amber-700">Coffee Records</p>
-            <h1 className="mt-1 text-3xl font-semibold">コーヒー豆一覧</h1>
-          </div>
-          <Link href="/coffee/new" className={buttonClasses.primary}>
-            新しい豆を登録
+    <main className="h-full overflow-y-auto bg-teal-100/80">
+      <header className="w-full bg-teal-900/10 px-4 py-2 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-4xl items-center">
+          <Link
+            href={`${basePath}/new`}
+            aria-label="登録"
+            title="登録"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full transition-all hover:bg-rose-400/50 duration-200 ease-out hover:scale-110 hover:rotate-360"
+          >
+            <Image
+              src={publicUrl("/image-plus.svg")}
+              alt=""
+              width={32}
+              height={32}
+              aria-hidden="true"
+            />
           </Link>
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-6 pb-6 sm:px-6 lg:px-8">
         {loading ? (
           <section className="rounded-md border border-stone-200 bg-white p-6 text-sm text-gray-600">
             読み込み中...
@@ -60,16 +110,7 @@ export default function CoffeePage() {
 
         {!loading && !error && coffeeBeans.length === 0 ? (
           <section className="rounded-md border border-dashed border-stone-300 bg-white p-8 text-center">
-            <h2 className="text-lg font-semibold">登録済みの豆はありません</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              画像アップロードと確認画面で保存したコーヒー豆がここに表示されます。
-            </p>
-            <Link
-              href="/coffee/new"
-              className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-amber-800 px-4 text-sm font-semibold text-amber-900 transition hover:bg-amber-50"
-            >
-              登録ページへ
-            </Link>
+            <p>まだ登録されている豆はありません。</p>
           </section>
         ) : null}
 
@@ -84,7 +125,7 @@ export default function CoffeePage() {
               return (
                 <Link
                   key={coffeeBean.id}
-                  href={`/coffee/detail?id=${coffeeBean.id}`}
+                  href={`${basePath}/detail?id=${coffeeBean.id}`}
                   className="flex min-h-[26rem] flex-col overflow-hidden rounded-md border border-stone-200 bg-white shadow-sm transition hover:border-amber-700 hover:shadow-md"
                 >
                   {imageUrl ? (
@@ -115,20 +156,10 @@ export default function CoffeePage() {
                             {getDisplayName(coffeeBean)}
                           </h2>
                         </div>
-                        {coffeeBean.status ? (
-                          <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
-                            {coffeeBean.status}
-                          </span>
-                        ) : null}
                       </div>
 
                       <dl className="mt-4 grid gap-2 text-sm text-gray-600">
-                        <div className="flex justify-between gap-3">
-                          <dt>Code</dt>
-                          <dd className="text-right text-gray-900">
-                            {coffeeBean.code || "-"}
-                          </dd>
-                        </div>
+                        <div className="flex justify-between gap-3"></div>
                         <div className="flex justify-between gap-3">
                           <dt>Country</dt>
                           <dd className="text-right text-gray-900">

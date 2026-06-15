@@ -1,14 +1,13 @@
 class CoffeeBean < ApplicationRecord
   belongs_to :user
-  has_many :tasting_notes, dependent: :destroy
 
   STATUSES = %w[draft confirmed].freeze
 
   validates :status, inclusion: { in: STATUSES }
   validate :flavor_notes_must_be_an_array
 
-  def as_json_for_api(include_tasting_notes: false)
-    data = {
+  def as_json_for_api
+    {
       id: id,
       image_url: image_url,
       brand: brand,
@@ -31,12 +30,6 @@ class CoffeeBean < ApplicationRecord
       created_at: created_at&.iso8601,
       updated_at: updated_at&.iso8601
     }
-
-    if include_tasting_notes
-      data[:tasting_notes] = tasting_notes.order(created_at: :desc).map(&:as_json_for_api)
-    end
-
-    data
   end
 
   private

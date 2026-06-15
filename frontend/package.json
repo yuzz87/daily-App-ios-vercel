@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",
+    "@mastra/core": "^1.42.0",
     "ai": "^6.0.198",
     "next": "^16.2.7",
     "postcss": "^8.5.15",
@@ -28,6 +29,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "^16.2.7",
+    "mastra": "^1.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

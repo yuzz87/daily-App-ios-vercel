@@ -2,7 +2,7 @@ import { API_BASE_URL, apiFetch } from "@/lib/auth";
 import type { CalendarEvent, Holiday } from "./types";
 
 // Set NEXT_PUBLIC_DISABLE_API=true to use local mock data.
-const IS_MOCK_MODE = process.env.NEXT_PUBLIC_DISABLE_API === "true";
+const IS_ENV_MOCK_MODE = process.env.NEXT_PUBLIC_DISABLE_API === "true";
 
 type EventPayload = {
   title: string;
@@ -59,55 +59,61 @@ function buildLocalDateTime(
 }
 
 let mockNextEventId = 9000;
-const mockEvents: CalendarEvent[] = IS_MOCK_MODE
-  ? [
-      {
-        id: mockNextEventId++,
-        title: "朝会",
-        description: "デイリースクラム",
-        start_at: buildLocalDateTime(0, 9, 0),
-        end_at: buildLocalDateTime(0, 9, 30),
-        all_day: false,
-        color: "#3b82f6",
-      },
-      {
-        id: mockNextEventId++,
-        title: "ランチ",
-        description: null,
-        start_at: buildLocalDateTime(0, 12, 0),
-        end_at: buildLocalDateTime(0, 13, 0),
-        all_day: false,
-        color: "#10b981",
-      },
-      {
-        id: mockNextEventId++,
-        title: "1on1",
-        description: null,
-        start_at: buildLocalDateTime(1, 15, 0),
-        end_at: buildLocalDateTime(1, 15, 30),
-        all_day: false,
-        color: "#f59e0b",
-      },
-      {
-        id: mockNextEventId++,
-        title: "勉強会",
-        description: null,
-        start_at: buildLocalDateTime(2, 19, 0),
-        end_at: buildLocalDateTime(2, 20, 30),
-        all_day: false,
-        color: "#8b5cf6",
-      },
-      {
-        id: mockNextEventId++,
-        title: "病院",
-        description: null,
-        start_at: buildLocalDateTime(3, 10, 0),
-        end_at: buildLocalDateTime(3, 11, 0),
-        all_day: false,
-        color: "#ef4444",
-      },
-    ]
-  : [];
+let mockEvents: CalendarEvent[] | null = null;
+
+function isMockMode(): boolean {
+  return (
+    IS_ENV_MOCK_MODE ||
+    (typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/demo/calendar"))
+  );
+}
+
+function getMockEvents(): CalendarEvent[] {
+  if (mockEvents) return mockEvents;
+
+  mockNextEventId = 9000;
+  mockEvents = [
+    {
+      id: mockNextEventId++,
+      title: "朝会",
+      description: "デイリースクラム",
+      start_at: buildLocalDateTime(0, 9, 0),
+      end_at: buildLocalDateTime(0, 9, 30),
+      all_day: false,
+      color: "#3b82f6",
+    },
+    {
+      id: mockNextEventId++,
+      title: "コーヒー豆の買い出し",
+      description: "週末用の豆を選ぶ",
+      start_at: buildLocalDateTime(1, 18, 30),
+      end_at: buildLocalDateTime(1, 19, 30),
+      all_day: false,
+      color: "#f59e0b",
+    },
+    {
+      id: mockNextEventId++,
+      title: "ポートフォリオ作業",
+      description: "デモ画面の確認",
+      start_at: buildLocalDateTime(2, 20, 0),
+      end_at: buildLocalDateTime(2, 21, 30),
+      all_day: false,
+      color: "#8b5cf6",
+    },
+    {
+      id: mockNextEventId++,
+      title: "病院",
+      description: null,
+      start_at: buildLocalDateTime(3, 10, 0),
+      end_at: buildLocalDateTime(3, 11, 0),
+      all_day: false,
+      color: "#ef4444",
+    },
+  ];
+
+  return mockEvents;
+}
 
 function getEventDateString(event: CalendarEvent): string {
   return event.start_at.slice(0, 10);
@@ -118,7 +124,7 @@ function filterMockEventsByMonth(
   month: number
 ): CalendarEvent[] {
   const targetPrefix = `${year}-${pad2(month)}`;
-  return mockEvents.filter((event) =>
+  return getMockEvents().filter((event) =>
     getEventDateString(event).startsWith(targetPrefix)
   );
 }
@@ -134,7 +140,7 @@ export async function fetchHolidays(
   year: number,
   month: number
 ): Promise<Holiday[]> {
-  if (IS_MOCK_MODE) {
+  if (isMockMode()) {
     logMockMode(`fetchHolidays ${year}-${pad2(month)}`);
     return [];
   }
@@ -154,7 +160,7 @@ export async function fetchEvents(
   year: number,
   month: number
 ): Promise<CalendarEvent[]> {
-  if (IS_MOCK_MODE) {
+  if (isMockMode()) {
     logMockMode(`fetchEvents ${year}-${pad2(month)}`);
     return filterMockEventsByMonth(year, month);
   }
@@ -171,7 +177,7 @@ export async function fetchEvents(
 export async function createCalendarEvent(
   payload: EventPayload
 ): Promise<CalendarEvent> {
-  if (IS_MOCK_MODE) {
+  if (isMockMode()) {
     const created: CalendarEvent = {
       id: mockNextEventId++,
       title: payload.title,
@@ -181,7 +187,7 @@ export async function createCalendarEvent(
       all_day: payload.all_day,
       color: payload.color || null,
     };
-    mockEvents.push(created);
+    getMockEvents().push(created);
     logMockMode(`createCalendarEvent id=${created.id}`);
     return created;
   }
@@ -204,8 +210,9 @@ export async function updateCalendarEvent(
   id: number,
   payload: EventPayload
 ): Promise<CalendarEvent> {
-  if (IS_MOCK_MODE) {
-    const index = mockEvents.findIndex((event) => event.id === id);
+  if (isMockMode()) {
+    const events = getMockEvents();
+    const index = events.findIndex((event) => event.id === id);
     if (index < 0) throw new Error("予定が見つかりません");
 
     const updated: CalendarEvent = {
@@ -217,7 +224,7 @@ export async function updateCalendarEvent(
       all_day: payload.all_day,
       color: payload.color || null,
     };
-    mockEvents[index] = updated;
+    events[index] = updated;
     logMockMode(`updateCalendarEvent id=${id}`);
     return updated;
   }
@@ -237,9 +244,10 @@ export async function updateCalendarEvent(
 }
 
 export async function deleteCalendarEvent(id: number): Promise<void> {
-  if (IS_MOCK_MODE) {
-    const index = mockEvents.findIndex((event) => event.id === id);
-    if (index >= 0) mockEvents.splice(index, 1);
+  if (isMockMode()) {
+    const events = getMockEvents();
+    const index = events.findIndex((event) => event.id === id);
+    if (index >= 0) events.splice(index, 1);
     logMockMode(`deleteCalendarEvent id=${id}`);
     return;
   }

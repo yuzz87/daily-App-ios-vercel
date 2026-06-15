@@ -341,7 +341,7 @@ export function VoiceMemoRecorder({
         aria-label={
           recordingState === "recording" ? "Stop recording" : "Start recording"
         }
-        className="rounded-full p-1 transition hover:bg-indigo-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-full p-1 transition duration-500 ease-out hover:scale-110 hover:rotate-1080 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Image
           src={publicUrl("/disc-3.svg")}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { API_BASE_URL, apiFetch } from "@/lib/auth";
+import { deleteDemoCoffeeBean, isDemoCoffeePath } from "../demoCoffeeStore";
 
 type DeleteCoffeeBeanButtonProps = {
   coffeeBeanId: number;
@@ -12,13 +13,14 @@ export default function DeleteCoffeeBeanButton({
   coffeeBeanId,
 }: DeleteCoffeeBeanButtonProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isDemo = isDemoCoffeePath(pathname);
+  const listPath = isDemo ? "/demo/coffee" : "/coffee";
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      "Delete this coffee bean? Tasting notes for this bean will also be deleted."
-    );
+    const confirmed = window.confirm("Delete this coffee bean?");
 
     if (!confirmed) {
       return;
@@ -28,6 +30,13 @@ export default function DeleteCoffeeBeanButton({
     setErrorMessage(null);
 
     try {
+      if (isDemo) {
+        deleteDemoCoffeeBean(coffeeBeanId);
+        router.push(listPath);
+        router.refresh();
+        return;
+      }
+
       const res = await apiFetch(`${API_BASE_URL}/coffee_beans/${coffeeBeanId}`, {
         method: "DELETE",
       });
@@ -37,7 +46,7 @@ export default function DeleteCoffeeBeanButton({
         return;
       }
 
-      router.push("/coffee");
+      router.push(listPath);
       router.refresh();
     } catch {
       setErrorMessage("Could not connect to the Rails API.");

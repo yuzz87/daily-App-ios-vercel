@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_16_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -44,7 +44,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_000000) do
     t.string "roast_level"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id"
+    t.bigint "user_id", null: false
     t.string "variety"
     t.index ["code"], name: "index_coffee_beans_on_code"
     t.index ["flavor_notes"], name: "index_coffee_beans_on_flavor_notes", using: :gin
@@ -91,26 +91,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_000000) do
     t.index ["recorded_at"], name: "index_study_sessions_on_recorded_at"
   end
 
-  create_table "tasting_notes", force: :cascade do |t|
-    t.integer "acidity"
-    t.integer "aroma"
-    t.integer "bitterness"
-    t.integer "body"
-    t.string "brew_method"
-    t.integer "brew_time"
-    t.bigint "coffee_bean_id", null: false
-    t.decimal "coffee_grams", precision: 6, scale: 2
-    t.datetime "created_at", null: false
-    t.string "grind_size"
-    t.text "memo"
-    t.integer "rating"
-    t.integer "sweetness"
-    t.datetime "updated_at", null: false
-    t.decimal "water_grams", precision: 7, scale: 2
-    t.integer "water_temp"
-    t.index ["coffee_bean_id"], name: "index_tasting_notes_on_coffee_bean_id"
-  end
-
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
@@ -121,5 +101,4 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_000000) do
 
   add_foreign_key "coffee_beans", "users"
   add_foreign_key "events", "users"
-  add_foreign_key "tasting_notes", "coffee_beans"
 end

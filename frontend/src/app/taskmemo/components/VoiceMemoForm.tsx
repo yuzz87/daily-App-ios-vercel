@@ -46,6 +46,7 @@ export function VoiceMemoForm({
               name="title"
               value={value.title}
               onChange={(event) => onChange("title", event.target.value)}
+              disabled={disabled}
               className="min-h-11 rounded-md border border-black/40 px-3 text-center text-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
           </label>
@@ -59,6 +60,7 @@ export function VoiceMemoForm({
             name="transcript"
             value={value.transcript}
             onChange={(event) => onChange("transcript", event.target.value)}
+            disabled={disabled}
             rows={6}
             className="min-h-60 resize-y rounded-md border border-black/40 px-3 py-3 text-center text-sm leading-6 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
           />

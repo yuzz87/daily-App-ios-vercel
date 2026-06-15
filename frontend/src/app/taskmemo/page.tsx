@@ -219,7 +219,10 @@ export default function TaskMemoPage() {
   }
 
   return (
-    <main className="flex h-full min-h-0 flex-col overflow-hidden bg-teal-100/80 px-4 py-5 text-gray-950 sm:px-6 lg:px-8">
+    <main
+      className="flex h-full min-h-0 flex-col overflow-hidden
+      bg-teal-100/80 px-4 py-5 text-gray-950 sm:px-6 lg:px-8"
+    >
       {notification ? (
         <div
           role="status"
@@ -266,7 +269,7 @@ export default function TaskMemoPage() {
                 onDelete={handleDelete}
               />
             ) : (
-              <section className="min-h-0 overflow-y-auto rounded-md border border-purple-300 bg-purple-300/60 shadow-sm">
+              <section className="min-h-0 overflow-y-auto rounded-md border border-purple-900 bg-purple-300/60 shadow-sm">
                 <VoiceMemoForm
                   value={form}
                   disabled={isRecording}

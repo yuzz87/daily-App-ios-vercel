@@ -1,6 +1,7 @@
 import type { VoiceMemo } from "@/app/taskmemo/types/voiceMemo";
 
 const STORAGE_KEY = "voice_memos";
+const DEMO_STORAGE_KEY = "demo_voice_memos";
 
 //最初の受け取り
 type VoiceMemoRecord = {
@@ -17,8 +18,8 @@ export function getVoiceMemos(): VoiceMemo[] {
   if (!storage) return [];
 
   try {
-    const raw = storage.getItem(STORAGE_KEY); //dataを取り出すmethod
-    if (!raw) return [];
+    const raw = storage.getItem(getStorageKey()); //dataを取り出すmethod
+    if (!raw) return getFallbackMemos();
 
     const parsed = JSON.parse(raw); //JSON形式の文字列を JavaScript の値に戻すメソッド
     if (!Array.isArray(parsed)) return [];
@@ -36,7 +37,7 @@ export function saveVoiceMemos(memos: VoiceMemo[]): void {
   try {
     //key,valueで保存
     storage.setItem(
-      STORAGE_KEY,
+      getStorageKey(),
       JSON.stringify(
         sortVoiceMemos(memos.map(normalizeVoiceMemo).filter(isVoiceMemo)),
       ),
@@ -73,6 +74,75 @@ function getStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+function getStorageKey(): string {
+  if (
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/demo/taskmemo")
+  ) {
+    return DEMO_STORAGE_KEY;
+  }
+
+  return STORAGE_KEY;
+}
+
+function getFallbackMemos(): VoiceMemo[] {
+  if (
+    typeof window === "undefined" ||
+    !window.location.pathname.startsWith("/demo/taskmemo")
+  ) {
+    return [];
+  }
+
+  const now = new Date();
+
+  return sortVoiceMemos([
+    demoMemo(
+      "demo-memo-1",
+      "今日やること",
+      "Calendar の予定確認。Coffee デモの表示確認。夜に README を整理する。",
+      42,
+      addMinutes(now, -90),
+    ),
+    demoMemo(
+      "demo-memo-2",
+      "コーヒー豆メモ",
+      "次はエチオピアの浅煎りを試す。フレーバーは柑橘、紅茶、花の印象。",
+      36,
+      addMinutes(now, -45),
+    ),
+    demoMemo(
+      "demo-memo-3",
+      "アプリ改善アイデア",
+      "デモ画面をログインなしで見られるようにする。TaskMemo は通常データと demo データを分ける。",
+      58,
+      addMinutes(now, -20),
+    ),
+  ]);
+}
+
+function demoMemo(
+  id: string,
+  title: string,
+  transcript: string,
+  durationSec: number,
+  date: Date,
+): VoiceMemo {
+  const isoDate = date.toISOString();
+
+  return {
+    id,
+    title,
+    transcript,
+    durationSec,
+    createdAt: isoDate,
+    updatedAt: isoDate,
+  };
+}
+
+function addMinutes(date: Date, minutes: number): Date {
+  return new Date(date.getTime() + minutes * 60 * 1000);
 }
 
 function normalizeVoiceMemo(value: unknown): VoiceMemo | null {
