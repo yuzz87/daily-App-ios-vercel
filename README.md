@@ -32,7 +32,7 @@
       <img
         width="100%"
         alt="coffee"
-        src="<img width="1180" height="857" alt="image" src="https://github.com/user-attachments/assets/bce27203-f0c6-44ff-bfd1-df7a433d35ed" />
+        src="https://github.com/user-attachments/assets/bce27203-f0c6-44ff-bfd1-df7a433d35ed" />
       <br />
       コーヒー画像登録画面
     </td>
