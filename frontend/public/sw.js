@@ -1,6 +1,13 @@
-const CACHE_NAME = "daily-app-v2";
+const CACHE_NAME = "daily-app-v3";
 
-const APP_SHELL = ["/", "/coffee", "/memo"];
+const APP_SHELL = [
+  "/",
+  "/calendar",
+  "/coffee",
+  "/taskmemo",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

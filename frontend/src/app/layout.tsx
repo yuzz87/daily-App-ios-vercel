@@ -20,6 +20,7 @@ export default function Layout({
       <head>
         <link rel="manifest" href={publicUrl("/manifest.json")} />
         <meta name="theme-color" content="#1a1a1a" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
