@@ -32,7 +32,8 @@
       <img
         width="100%"
         alt="coffee"
-        src="https://github.com/user-attachments/assets/a562f35e-638c-4c38-9d22-4a55fed61942"
+        src="<img width="1180" height="857" alt="image" src="https://github.com/user-attachments/assets/bce27203-f0c6-44ff-bfd1-df7a433d35ed" />
+"
       />
       <br />
       コーヒー画像登録画面
