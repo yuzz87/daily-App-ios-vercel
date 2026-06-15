@@ -20,6 +20,8 @@ services:
         generateValue: true
       - key: ALLOWED_EMAILS
         sync: false
+      - key: SEED_USER_PASSWORD
+        sync: false
       - key: FRONTEND_URL
         value: https://yuzz87.github.io
       - key: TARGET_TIMEOUT
