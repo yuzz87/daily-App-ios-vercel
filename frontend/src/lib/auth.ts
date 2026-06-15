@@ -44,14 +44,20 @@ export async function apiFetch(
     baseHeaders["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(input, {
-    ...init,
-    credentials: "same-origin",
-    headers: {
-      ...baseHeaders,
-      ...(init.headers as Record<string, string> | undefined),
-    },
-  });
+  let res: Response;
+
+  try {
+    res = await fetch(input, {
+      ...init,
+      credentials: "same-origin",
+      headers: {
+        ...baseHeaders,
+        ...(init.headers as Record<string, string> | undefined),
+      },
+    });
+  } catch {
+    throw new Error("通信に失敗しました。ネットワーク接続を確認してから、もう一度試してください。");
+  }
 
   if (res.status === 401) {
     removeToken();
