@@ -22,6 +22,8 @@ services:
         sync: false
       - key: SEED_USER_PASSWORD
         sync: false
+      - key: RESET_SEED_USER_PASSWORD
+        value: "false"
       - key: FRONTEND_URL
         sync: false
       - key: TARGET_TIMEOUT
