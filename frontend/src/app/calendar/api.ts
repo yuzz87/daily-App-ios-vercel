@@ -17,26 +17,41 @@ async function handleApiError(
   res: Response,
   fallbackMessage: string
 ): Promise<never> {
-  try {
-    const data = await res.json();
+  const data = await readErrorBody(res);
 
-    if (Array.isArray(data.errors) && data.errors.length > 0) {
-      throw new Error(data.errors.join("\n"));
-    }
+  if (isRecord(data) && Array.isArray(data.errors) && data.errors.length > 0) {
+    throw new Error(data.errors.map(String).join("\n"));
+  }
 
-    if (typeof data.error === "string") {
-      throw new Error(data.error);
-    }
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message !== "Unexpected end of JSON input"
-    ) {
-      throw error;
-    }
+  if (isRecord(data) && typeof data.error === "string") {
+    throw new Error(data.error);
   }
 
   throw new Error(fallbackMessage);
+}
+
+async function readErrorBody(res: Response): Promise<unknown> {
+  const contentType = res.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    const text = await res.text();
+    if (!text.trim()) return null;
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 // === モックストア =====================================================
