@@ -39,6 +39,7 @@ export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
 
 function isPublicPath(pathname: string): boolean {
   return (
+    pathname === "/" ||
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/taskmemo" ||
