@@ -1,4 +1,4 @@
-const CACHE_NAME = "daily-app-v3";
+const CACHE_NAME = "daily-app-v4";
 
 const APP_SHELL = [
   "/",
@@ -27,6 +27,11 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+  const url = new URL(request.url);
+
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   // API リクエストはキャッシュしない
   if (request.url.includes("/api/")) {
